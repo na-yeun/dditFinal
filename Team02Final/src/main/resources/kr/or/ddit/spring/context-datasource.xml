@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:context="http://www.springframework.org/schema/context"
+   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+      http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+<!--    데이터베이스 연결을 위한 데이터 소스 등록 -->
+   <context:property-placeholder location="classpath:kr/or/ddit/db/DBInfo.properties"/>
+   
+   <bean class="com.zaxxer.hikari.HikariConfig" id="config">
+      <property name="driverClassName" value="${driverClassName}"/>
+      <property name="jdbcUrl" value="${url}"/>
+      <property name="username" value="${user}"/>
+      <property name="password" value="${password}"/>
+      
+      <property name="connectionTestQuery" value="${testQuery}"/>
+      <property name="minimumIdle" value="${minimulIdle}"/>
+      <property name="maximumPoolSize" value="${maximulSize}"/>
+      <property name="connectionTimeout" value="${maxWait}"/>
+   </bean>
+   
+   
+   <bean class="com.zaxxer.hikari.HikariDataSource" id="dataSource">
+      <constructor-arg name="configuration" ref="config"></constructor-arg>
+   </bean>
+   
+   
+</beans>

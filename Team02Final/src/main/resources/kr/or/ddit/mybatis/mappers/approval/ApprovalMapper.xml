@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.approval.dao.ApprovalMapper">
+
+<!--    결재선(사실상 결재자) 넣기-->
+    <insert id="insertApprovals" parameterType="java.util.List">
+        INSERT ALL
+        <foreach collection="list" item="approval" separator=" ">
+            INTO APPROVAL (
+             APPROVAL_ID
+            ,DOC_ID
+            ,APPROVAL_DATE
+            ,APPROVAL_NUM
+            ,EMP_ID
+            ,APPROVAL_COMMENT
+            ,APPROVAL_STATUS
+            ,APPROVAL_YN
+            ,APPRLINE_RID
+            ) VALUES (
+             #{approval.approvalId}
+            ,#{approval.docId}
+            ,#{approval.approvalDate}
+            ,#{approval.approvalNum}
+            ,#{approval.empId}
+            ,#{approval.approvalComment}
+            ,#{approval.approvalStatus}
+            ,#{approval.approvalYn}
+            ,#{approval.apprlineRid}
+            )
+        </foreach>
+        SELECT * FROM DUAL
+    </insert>
+
+<!--    특정 결재문서의 결재자들 조회-->
+    <select id="selectApprovalList" resultType="ApprovalVO">
+        SELECT
+             A.APPROVAL_NUM
+            ,A.DOC_ID
+            ,A.EMP_ID
+            ,A.APPROVAL_STATUS
+            ,A.APPROVAL_DATE
+            ,A.APPROVAL_COMMENT
+            ,A.APPROVAL_YN
+            ,E.EMP_NAME
+            ,AP.APPROVER_FINAL_YN    -- 전결 권한 여부 (조인해서 approver에 갖다와야함)
+            ,(
+                SELECT CC.CODE_COMMENT
+                FROM COMMON_CODE CC
+                WHERE CC.TABLE_NAME = 'APPROVAL'
+                  AND CC.CODE = A.APPROVAL_STATUS
+             ) AS APPROVAL_STATUS_NAME
+        FROM APPROVAL A
+                 LEFT JOIN EMPLOYEE E ON A.EMP_ID = E.EMP_ID
+                 LEFT JOIN APPROVAL_DOCUMENT AD ON A.DOC_ID = AD.DOC_ID
+                 LEFT JOIN APPROVER AP ON (
+                    A.EMP_ID = AP.EMP_ID
+                AND AD.APPRLINE_ID = AP.APPRLINE_ID
+            )
+        WHERE A.DOC_ID = #{docId}
+        ORDER BY A.APPROVAL_NUM
+    </select>
+
+<!--    나의 결재선 상태 변경하기 1미열람에서 2결재중으로 바꾸는정도-->
+    <update id="updateMyApprovalStatus">
+        UPDATE APPROVAL
+        SET
+            APPROVAL_STATUS = #{status},
+            APPROVAL_DATE = SYSDATE
+        WHERE DOC_ID = #{docId}
+          AND EMP_ID = #{empId}
+    </update>
+
+    <!--    승인이나 반려했을때 그에대한 approval테이블 변경하기-->
+    <update id="updateApproval">
+        UPDATE APPROVAL
+        SET
+         APPROVAL_DATE = #{approval.approvalDate}
+        ,APPRLINE_RID = #{empId}
+        ,APPROVAL_STATUS = #{approval.approvalStatus}
+        ,APPROVAL_COMMENT = #{approval.approvalComment}
+        ,APPROVAL_YN = #{approval.approvalYn}
+        WHERE DOC_ID = #{docId}
+        AND EMP_ID = #{empId}
+    </update>
+
+
+
+    <!-- 나보다 높은 결재자들 조회하기 (전결처리용) -->
+    <select id="selectRemainingApprovers" resultType="ApprovalVO">
+        SELECT *
+        FROM APPROVAL
+        WHERE DOC_ID = #{docId}
+          AND APPROVAL_STATUS = '5'  -- 결재 대기 상태
+          AND APPROVAL_NUM > (
+            SELECT APPROVAL_NUM
+            FROM APPROVAL
+            WHERE DOC_ID = #{docId}
+              AND EMP_ID = #{empId}  -- 현재 결재자의 차수보다 높은 차수
+        )
+        ORDER BY APPROVAL_NUM
+    </select>
+
+    <!-- 남은 결재자들 모두 현재 결재자로 변경 -->
+    <update id="updateRemainingApprovers">
+        UPDATE APPROVAL
+        SET
+            APPROVAL_STATUS = '6',    -- 전결 상태로
+            APPROVAL_DATE = SYSDATE,  -- 현재 시간으로
+            APPRLINE_RID = #{empId}   -- 전결한 결재자로
+        WHERE DOC_ID = #{docId}
+          AND APPROVAL_STATUS = '5'     -- 결재 대기 상태인
+          AND APPROVAL_NUM > (          -- 현재 결재자보다 높은 차수의
+            SELECT APPROVAL_NUM
+            FROM APPROVAL
+            WHERE DOC_ID = #{docId}
+              AND EMP_ID = #{empId}
+        )
+    </update>
+
+    <!-- 최종 결재자 여부 확인 -->
+    <select id="isLastApprover" resultType="boolean">
+        SELECT
+            CASE
+                WHEN NOT EXISTS (
+                    SELECT 1
+                    FROM APPROVAL
+                    WHERE DOC_ID = #{docId}
+                      AND APPROVAL_NUM > (
+                        SELECT APPROVAL_NUM
+                        FROM APPROVAL
+                        WHERE DOC_ID = #{docId}
+                          AND EMP_ID = #{empId}
+                    )
+                ) THEN 1
+                ELSE 0
+                END
+        FROM DUAL
+    </select>
+
+</mapper>

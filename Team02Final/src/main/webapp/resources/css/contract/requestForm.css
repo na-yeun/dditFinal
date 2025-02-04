@@ -1,0 +1,87 @@
+@charset "UTF-8";
+
+
+        body {
+            display: flex;
+            justify-content: center; /* 수평 중앙 정렬 */
+            align-items: center; /* 수직 중앙 정렬 */
+            height: 100vh; /* 화면 전체 높이 */
+            margin: 0;
+            background-color: #f8f9fa; /* 배경색 */
+        }
+
+        .container {
+            width: 70%; /* 화면의 70% 너비 */
+            height:90%; /* 화면의 70% 높이 */
+            background-color: #fff; /* 흰색 배경 */
+            padding: 20px;
+            border-radius: 8px; /* 모서리 둥글게 */
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* 그림자 */
+            overflow-y: auto; /* 높이를 넘는 내용은 스크롤 */
+        }
+    .form-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        background: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        height: auto;
+    }
+
+    .form-title {
+        font-size: 1.8rem;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #343a40;
+    }
+
+    .table {
+        border-spacing: 0 15px; /* Add spacing between rows */
+    }
+
+    .table th {
+        background-color: #f1f1f1;
+        text-align: left;
+        width: 30%;
+    }
+
+    .table td {
+        width: 70%;
+    }
+
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+    }
+
+    .text-danger {
+        font-size: 0.9rem;
+    }
+    
+  
+    .form-label {
+    font-size: 1.25rem; /* 글자 크기를 키움 */
+    font-weight: bold; /* 글자 두께를 굵게 */
+    color: #333; /* 글자 색상 */
+    margin-bottom: 10px; /* 라벨과 컨텐츠 간의 간격 */
+}
+    
+/* CSS */
+.d-flex.align-items-center {
+    display: flex;
+    flex-wrap: wrap; /* 반응형 대비 */
+    gap: 35px;       /* 라벨 간격 */
+    justify-content: flex-start; /* 좌측 정렬 */
+}
+
+/* #autoMappingBtn { */
+/*     position: absolute; */
+/*     top: 10px; */
+/*     right: 10px; */
+/*     z-index: 1000; 다른 요소 위에 배치되도록 설정 */
+/* } */
+    
+    
+    

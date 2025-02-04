@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+
+	
+<!-- 	dao , service 가 빈으로 등록되도록 scan 설정 추가 -->
+<!-- 	단, controller 제외  -->
+	<context:component-scan base-package="kr.or.ddit">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+	</context:component-scan>
+	
+	<util:properties location="classpath:/kr/or/ddit/DirectoryInfo.properties" id="dirInfo"/>
+	
+<!-- 	<bean class="org.springframework.web.multipart.commons.CommonsMultipartResolver" id="filterMultipartResolver"> -->
+<!-- 		<property name="defaultEncoding" value="UTF-8"/> -->
+<!-- 		<property name="maxUploadSizePerFile" value="#{1024*1024*5}"/> 5MB 까지 제한 하나당 2MB  -->
+<!-- 		<property name="maxUploadSize" value="#{1024*1024*50}" />	50MB 까지 제한 이것도 큼 최대 10메가까지하자. -->
+<!-- 	</bean> -->
+	<util:list id="wsSessionList" list-class="java.util.concurrent.CopyOnWriteArrayList" />
+</beans>

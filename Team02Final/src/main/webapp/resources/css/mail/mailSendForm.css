@@ -1,0 +1,55 @@
+@charset "UTF-8";
+
+.dropzone {
+	border: none;
+}
+
+.mail-send-title {
+	width: 10%;
+}
+
+.mail-form {
+	width: 900px;
+}
+
+.mail-send-search-btn {
+	width: 10%;
+}
+
+.button-area {
+	text-align: right;
+}
+
+.icon {
+	margin-top: 5px;
+	width: 15px;
+	height: 15px;
+}
+
+.add-email {
+	padding-top: 5px;
+	display: flex;
+	align-items: conter;
+	gap: 5px;
+	padding-bottom: 2px;
+}
+
+#to-list, #cc-list, #bcc-list {
+	display: flex; /* Flexbox로 자식 요소를 좌우 정렬 */
+	flex-wrap: wrap; /* 여러 줄로 넘어갈 경우 줄 바꿈 허용 */
+	gap: 10px; /* 요소 간의 간격 */
+}
+
+
+.badge {
+	text-transform: none;
+}
+
+.bg-label-info{
+	color: #2f7989 !important;
+}
+
+.plus-form{
+	width: 975px;
+	max-width: 975px;
+}

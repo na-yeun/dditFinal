@@ -1,0 +1,194 @@
+@charset "UTF-8";
+
+
+/* 10명의 행이 보여질 수 있도록 높이를 고정 */
+.card.container {
+    height: 800px; /* 예: 10명에 맞는 높이 (실제 높이에 맞게 조정) */
+    overflow-y: auto; /* 내용이 넘칠 경우 스크롤바 생성 */
+    max-height: 800px; /* 최대 높이 제한 */
+    position: relative; /* 버튼 고정 위치 설정 */
+}
+
+.filter-container {
+  display: flex;
+  align-items: center; /* 모든 필터 아이템 세로 중앙 정렬 */
+  justify-content: space-between; /* 양쪽 정렬 */
+  gap: 20px; /* 요소 간격 */
+  flex-wrap: wrap; /* 화면 폭이 줄어들면 줄바꿈 */
+  margin-bottom: 20px; /* 테이블과 간격 */
+}
+
+.filter-container label {
+  display: flex;
+  flex-direction: column; /* 라벨이 위에 오도록 */
+  align-items: flex-start; /* 라벨과 필드 좌측 정렬 */
+  gap: 5px; /* 라벨과 필드 간 간격 */
+}
+
+.filter-container input,
+.filter-container select {
+  width: 150px; /* 모든 입력 필드 동일 너비 */
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* 검색창과 버튼 간 간격 */
+}
+
+.search-input {
+  width: 250px; /* 검색창 너비 */
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top : 30px;
+  
+}
+
+
+/* 초기화 버튼 위치 조정 */
+#reload-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  margin-right: 20px;
+  margin-top : 30px;
+}
+table {
+    table-layout: auto; /* 자동으로 셀 너비 조정 */
+    width: 100%;
+}
+
+th, td {
+    white-space: nowrap;      /* 줄바꿈 방지 */
+    overflow: hidden;         /* 넘치는 내용 숨기기 */
+    text-overflow: ellipsis;  /* 넘치는 내용은 '...'로 표시 */
+    padding: 8px;             /* 셀 안쪽 여백 */
+}
+
+th {
+    text-align: center; /* 헤더 가운데 정렬 */
+}
+
+td {
+    text-align: center; /* 내용 가운데 정렬 */
+}
+
+.list-td{
+	cursor: pointer;
+}
+
+
+.th-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px; /* 텍스트와 화살표 사이 여백 */
+}
+
+.arrow {
+    font-size: 12px; /* 화살표 크기 */
+    line-height: 1;
+}
+
+
+.arrow.asc::after {
+  content: "▲"; /* 오름차순 */
+}
+
+.arrow.desc::after {
+  content: "▼"; /* 내림차순 */
+}
+
+
+.button-container {
+    display: flex;
+    gap: 8px; /* 버튼 사이 여백 */
+    justify-content: flex-end;
+    margin-bottom: 10px; /* 버튼 아래 여백 */
+    padding-top : 8px;
+}
+
+.paging-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* 상하 정렬 */
+    margin-top: 0; /* 불필요한 여백 제거 */
+}
+
+#changeTimeBtn {
+    padding: 8px 16px;
+    font-size: 14px;
+    background-color: #6c5ce7;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 0; /* 버튼 위 여백 제거 */
+    right : 0; /* 오른쪽으로 밀기 */
+}
+
+
+
+/* 모달 내부 전체 정리 */
+.current-time, .select-time {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* 각 항목 간의 여백 */
+    margin-bottom: 10px;
+}
+
+.current-time label,
+.select-time label {
+    font-weight: bold;
+    color: #333; /* 텍스트 색상 */
+}
+
+.time-input, .time-select {
+    width: 100%; /* 입력 필드와 select 태그 너비 */
+    padding: 8px 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.time-input {
+    background-color: #f9f9f9; /* 읽기 전용 배경 색상 */
+    color: #555;
+}
+
+.time-select {
+    cursor: pointer;
+}
+
+/* 버튼 정렬 */
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* SweetAlert 컨테이너 z-index 강제 조정 */
+.swal2-container {
+    z-index: 9999 !important;
+}
+
+
+/* SweetAlert 팝업 커스텀 스타일 */
+.custom-swal-popup {
+    z-index: 9999 !important; /* Bootstrap 모달보다 훨씬 높게 설정 */
+    border: 1px solid #ccc; 
+    border-radius: 10px; 
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+}
+
+.atthisOver_Y{
+	color: red;
+}

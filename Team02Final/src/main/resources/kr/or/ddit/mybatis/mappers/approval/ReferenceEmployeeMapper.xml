@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.approval.dao.ReferenceEmployeeMapper">
+
+    <!-- 문서의 참조자 목록 조회 -->
+    <select id="selectReferencesByDocId" resultType="ReferenceEmployeeVO">
+        SELECT
+            RE.READ_STATUS_YN,
+            RE.READ_DATE,
+            RE.EMP_ID,
+            RE.REF_ID,
+            E.EMP_NAME,
+            (
+                SELECT CC.CODE_COMMENT
+                FROM COMMON_CODE CC
+                WHERE CC.TABLE_NAME = 'REFERENCE_EMPLOYEE'
+                  AND CC.CODE = RE.READ_STATUS_YN
+            ) AS STATUS_NAME
+        FROM REFERENCE_EMPLOYEE RE
+                 JOIN DOC_REFERENCE DR ON RE.REF_ID = DR.REF_ID
+                 JOIN EMPLOYEE E ON RE.EMP_ID = E.EMP_ID
+        WHERE DR.DOC_ID = #{docId}
+        ORDER BY RE.REF_ID
+    </select>
+
+    <!-- 참조자의 읽음 상태 업데이트 -->
+    <update id="updateReferenceStatus">
+        UPDATE REFERENCE_EMPLOYEE
+        SET
+            READ_STATUS_YN = 'Y',
+            READ_DATE = SYSDATE
+        WHERE EMP_ID = #{empId}
+          AND REF_ID IN (
+            SELECT REF_ID
+            FROM DOC_REFERENCE
+            WHERE DOC_ID = #{docId}
+        )
+    </update>
+
+</mapper>

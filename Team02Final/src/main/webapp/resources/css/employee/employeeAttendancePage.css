@@ -1,0 +1,40 @@
+@charset "UTF-8";
+
+#nowcount{
+	color: red;
+}
+
+th{
+	text-align: center;
+}
+
+td{
+	text-align: center;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	
+}
+
+
+#searchArea {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 10px;
+}
+
+#searchDateForm {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-control {
+    width: auto; /* input 필드의 너비 조정 */
+}
+
+.badge{
+	margin-bottom: 0px;
+	font-size: 15px;
+}

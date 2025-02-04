@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.provider.dao.ProviderMapper">
+	
+	<!-- 업종 계약 분석 초기 렌더링  -->
+	<select id="selectContractTypeStat" resultType="map">
+		SELECT     
+		     CONTRACT_TYPE, COUNT(*) AS CONTRACT_COUNT
+		   
+		  FROM CONTRACT
+		 WHERE 1=1 
+		   AND CONTRACT_TYPE IS NOT NULL
+		   AND CONTRACT_STATUS IN ('1', '5') 
+		  <if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		        <!-- 연도만 전달된 경우 -->
+		        <when test="contractStart.length() == 4">
+		            SUBSTR(CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        <!-- 월만 전달된 경우 -->
+		        <when test="contractStart.length() == 2">
+		            SUBSTR(CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        <!-- 연도 + 월 전달된 경우 -->
+		        <otherwise>
+		            SUBSTR(CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+		 GROUP BY CONTRACT_TYPE
+	</select>
+	
+	<!-- 업종 계약 분석에서 바 클릭했을때  -->
+	<select id="selectContractTypeCollapseStat" resultType="map">
+        		
+		SELECT 
+		    '업체 규모' AS CATEGORY,
+		    sc.SCALE_SIZE AS LABEL,
+		    COUNT(*) AS COUNT
+		FROM 
+		    CONTRACT c
+		JOIN SCALE sc ON c.SCALE_ID = sc.SCALE_ID
+		WHERE c.CONTRACT_TYPE = #{contractType}
+		<if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		        <!-- 연도만 전달된 경우 -->
+		        <when test="contractStart.length() == 4">
+		            SUBSTR(c.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        <!-- 월만 전달된 경우 -->
+		        <when test="contractStart.length() == 2">
+		            SUBSTR(c.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        <!-- 연도 + 월 전달된 경우 -->
+		        <otherwise>
+		            SUBSTR(c.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+		 
+		  AND c.CONTRACT_STATUS IN ('1', '5')
+		GROUP BY sc.SCALE_SIZE
+		
+		UNION ALL
+		
+		SELECT 
+		    '용량' AS CATEGORY,
+		    st.STORAGE_SIZE AS LABEL,
+		    COUNT(*) AS COUNT
+		FROM 
+		    CONTRACT c
+		JOIN STORAGE st ON c.STORAGE_ID = st.STORAGE_ID
+		WHERE c.CONTRACT_TYPE = #{contractType}
+		<if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		        <!-- 연도만 전달된 경우 -->
+		        <when test="contractStart.length() == 4">
+		            SUBSTR(c.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        <!-- 월만 전달된 경우 -->
+		        <when test="contractStart.length() == 2">
+		            SUBSTR(c.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        <!-- 연도 + 월 전달된 경우 -->
+		        <otherwise>
+		            SUBSTR(c.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+		  AND c.CONTRACT_STATUS IN ('1', '5')
+		GROUP BY st.STORAGE_SIZE
+		
+		UNION ALL
+		
+		SELECT 
+		    '사용 인원' AS CATEGORY,
+		    ec.EMP_COUNT AS LABEL,
+		    COUNT(*) AS COUNT
+		FROM 
+		    CONTRACT c
+		JOIN EMP_COUNT ec ON c.EMP_COUNT_ID = ec.EMP_COUNT_ID
+		WHERE c.CONTRACT_TYPE = #{contractType}
+		<if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		        <!-- 연도만 전달된 경우 -->
+		        <when test="contractStart.length() == 4">
+		            SUBSTR(c.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        <!-- 월만 전달된 경우 -->
+		        <when test="contractStart.length() == 2">
+		            SUBSTR(c.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        <!-- 연도 + 월 전달된 경우 -->
+		        <otherwise>
+		            SUBSTR(c.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+		  AND c.CONTRACT_STATUS IN ('1', '5')
+		GROUP BY ec.EMP_COUNT
+    </select>
+
+	<!-- 월별 계약 추세 통계-->
+	<select id="selectMonthlyContractStat" resultType="map">
+		SELECT 
+		     TO_CHAR(TO_DATE(SUBSTR(P.PAY_ID, 1, 6), 'YYYYMM'), 'YYYY-MM') AS MONTH
+		   , COUNT(*) AS PAY_COUNT
+		  FROM PAYMENT P INNER JOIN CONTRACT C
+		                     ON P.CONTRACT_ID = C.CONTRACT_ID 
+		 WHERE LENGTH(PAY_ID) >= 6 
+		   AND (C.CONTRACT_STATUS = '1' OR C.CONTRACT_STATUS = '5') 
+		  <if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		        <!-- 연도만 전달된 경우 -->
+		        <when test="contractStart.length() == 4">
+		            SUBSTR(c.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        <!-- 월만 전달된 경우 -->
+		        <when test="contractStart.length() == 2">
+		            SUBSTR(c.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        <!-- 연도 + 월 전달된 경우 -->
+		        <otherwise>
+		            SUBSTR(c.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+		 GROUP BY TO_CHAR(TO_DATE(SUBSTR(P.PAY_ID, 1, 6), 'YYYYMM'), 'YYYY-MM')
+		 ORDER BY TO_CHAR(TO_DATE(SUBSTR(P.PAY_ID, 1, 6), 'YYYYMM'), 'YYYY-MM')
+	</select>
+	
+	<select id="selectMonthlyContractCollapseStat" resultType="map">
+		SELECT 
+		    '업체 규모' AS CATEGORY,
+		    sc.SCALE_SIZE AS LABEL,
+		    COUNT(*) AS COUNT
+		FROM 
+		    CONTRACT c
+		JOIN SCALE sc ON c.SCALE_ID = sc.SCALE_ID
+		JOIN PAYMENT p ON c.CONTRACT_ID = p.CONTRACT_ID
+		WHERE 1=1
+		  AND TO_CHAR(TO_DATE(SUBSTR(p.PAY_ID, 1, 6), 'YYYYMM'), 'YYYY-MM') = #{payId}
+		<if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		        <!-- 연도만 전달된 경우 -->
+		        <when test="contractStart.length() == 4">
+		            SUBSTR(c.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        <!-- 월만 전달된 경우 -->
+		        <when test="contractStart.length() == 2">
+		            SUBSTR(c.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        <!-- 연도 + 월 전달된 경우 -->
+		        <otherwise>
+		            SUBSTR(c.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+
+		 
+		  AND c.CONTRACT_STATUS IN ('1', '5')
+		GROUP BY sc.SCALE_SIZE
+		
+		UNION ALL
+		
+		SELECT 
+		    '업종' AS CATEGORY,
+		    c.CONTRACT_TYPE AS LABEL,
+		    COUNT(*) AS COUNT
+		  FROM CONTRACT c 
+		 JOIN PAYMENT p ON c.CONTRACT_ID = p.CONTRACT_ID 
+		 WHERE 1=1
+		  AND TO_CHAR(TO_DATE(SUBSTR(p.PAY_ID, 1, 6), 'YYYYMM'), 'YYYY-MM') = #{payId}
+		<if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		         
+		        <when test="contractStart.length() == 4">/* 연도만 전달 */
+		            SUBSTR(c.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        
+		        <when test="contractStart.length() == 2"> /*월만 전달*/
+		            SUBSTR(c.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        
+		        <otherwise>/*연도 + 월 전달*/
+		            SUBSTR(c.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+
+		  AND c.CONTRACT_STATUS IN ('1', '5')
+		 
+		GROUP BY c.CONTRACT_TYPE
+		   
+		
+	</select>
+
+	<!-- 업체 규모별 분석 페이지 초기 렌더링  -->
+	<select id="selectScaleContStat" resultType="map">
+		/*selectScaleContStat*/
+		SELECT 
+			 '업체규모' AS CATEGORY
+		   , S.SCALE_SIZE AS LABEL
+		   , C.SCALE_ID, COUNT(*) AS COUNT
+		   
+		  FROM CONTRACT C INNER JOIN SCALE S 
+		                        ON C.SCALE_ID = S.SCALE_ID
+		 WHERE 1=1
+		   AND (CONTRACT_STATUS ='1' OR CONTRACT_STATUS = '5')
+		   <if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		         
+		        <when test="contractStart.length() == 4">/* 연도만 전달 */
+		            SUBSTR(C.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        
+		        <when test="contractStart.length() == 2"> /*월만 전달*/
+		            SUBSTR(C.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        
+		        <otherwise>/*연도 + 월 전달*/
+		            SUBSTR(C.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+		 GROUP BY C.SCALE_ID
+		        , S.SCALE_SIZE
+	</select>
+	
+	<!-- 업체규모별 분석 페이지에서 파이차트 하나 클릭  -->
+	<select id="selectScaleContCollapseStat" resultType="map">
+		
+		SELECT 
+		    '업종' AS CATEGORY,
+		    c.CONTRACT_TYPE AS LABEL,
+		    COUNT(*) AS COUNT
+		  FROM CONTRACT c  
+		  JOIN SCALE sc ON c.SCALE_ID = sc.SCALE_ID
+		 WHERE 1=1
+		   AND sc.SCALE_SIZE = #{scaleId}
+		<if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		         
+		        <when test="contractStart.length() == 4">/* 연도만 전달 */
+		            SUBSTR(c.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        
+		        <when test="contractStart.length() == 2"> /*월만 전달*/
+		            SUBSTR(c.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        
+		        <otherwise>/*연도 + 월 전달*/
+		            SUBSTR(c.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+
+		  AND c.CONTRACT_STATUS IN ('1', '5')
+		 
+		GROUP BY c.CONTRACT_TYPE
+		
+		UNION ALL
+		
+		SELECT 
+		    '스토리지 용량' AS CATEGORY,
+		    st.STORAGE_SIZE AS LABEL,
+		    COUNT(*) AS COUNT
+		FROM 
+		    CONTRACT c
+		JOIN STORAGE st ON c.STORAGE_ID = st.STORAGE_ID
+		JOIN SCALE sc ON c.SCALE_ID = sc.SCALE_ID
+		WHERE 1=1
+		  AND sc.SCALE_SIZE = #{scaleId}
+		<if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		        <!-- 연도만 전달된 경우 -->
+		        <when test="contractStart.length() == 4">
+		            SUBSTR(c.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        <!-- 월만 전달된 경우 -->
+		        <when test="contractStart.length() == 2">
+		            SUBSTR(c.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        <!-- 연도 + 월 전달된 경우 -->
+		        <otherwise>
+		            SUBSTR(c.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+		  AND c.CONTRACT_STATUS IN ('1', '5')
+		GROUP BY st.STORAGE_SIZE
+		
+		UNION ALL
+		
+		SELECT 
+		    '사용 인원' AS CATEGORY,
+		    ec.EMP_COUNT AS LABEL,
+		    COUNT(*) AS COUNT
+		FROM 
+		    CONTRACT c
+		JOIN EMP_COUNT ec ON c.EMP_COUNT_ID = ec.EMP_COUNT_ID
+		JOIN SCALE sc ON c.SCALE_ID = sc.SCALE_ID
+		WHERE 1=1
+		  AND sc.SCALE_SIZE = #{scaleId}
+		<if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		        <!-- 연도만 전달된 경우 -->
+		        <when test="contractStart.length() == 4">
+		            SUBSTR(c.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        <!-- 월만 전달된 경우 -->
+		        <when test="contractStart.length() == 2">
+		            SUBSTR(c.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        <!-- 연도 + 월 전달된 경우 -->
+		        <otherwise>
+		            SUBSTR(c.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+		  AND c.CONTRACT_STATUS IN ('1', '5')
+		GROUP BY ec.EMP_COUNT
+	</select>
+	
+	<!-- 스토리지 용량 통계 -->
+	<select id="selectStorageContStat" resultType="map">
+		
+		/*selectStorageContStat*/
+		SELECT 
+			 '스토리지' AS CATEGORY
+		   , ST.STORAGE_SIZE AS LABEL
+		   , C.STORAGE_ID, COUNT(*) AS COUNT
+		   
+		  FROM CONTRACT C INNER JOIN STORAGE ST 
+		                        ON C.STORAGE_ID = ST.STORAGE_ID
+		 WHERE 1=1
+		   AND (CONTRACT_STATUS ='1' OR CONTRACT_STATUS = '5')
+		   <if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		         
+		        <when test="contractStart.length() == 4">/* 연도만 전달 */
+		            SUBSTR(C.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        
+		        <when test="contractStart.length() == 2"> /*월만 전달*/
+		            SUBSTR(C.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        
+		        <otherwise>/*연도 + 월 전달*/
+		            SUBSTR(C.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+		 GROUP BY C.STORAGE_ID
+		        , ST.STORAGE_SIZE
+		
+	</select>
+	
+	<!-- 스토리지 용량 도넛 차트중 하나 선택했을 때 상세  -->
+	<select id="selectStorageContCollapseStat" resultType="map">
+		/*selectStorageContCollapseStat*/
+	
+		SELECT 
+		    '업종' AS CATEGORY,
+		    c.CONTRACT_TYPE AS LABEL,
+		    COUNT(*) AS COUNT
+		  FROM CONTRACT c  
+		  JOIN STORAGE st ON c.STORAGE_ID = st.STORAGE_ID
+		 WHERE 1=1
+		   AND st.STORAGE_SIZE = #{storageId}
+		<if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		         
+		        <when test="contractStart.length() == 4">/* 연도만 전달 */
+		            SUBSTR(c.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        
+		        <when test="contractStart.length() == 2"> /*월만 전달*/
+		            SUBSTR(c.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        
+		        <otherwise>/*연도 + 월 전달*/
+		            SUBSTR(c.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+		  AND c.CONTRACT_STATUS IN ('1', '5')
+		GROUP BY c.CONTRACT_TYPE
+
+		
+		UNION ALL
+		
+		SELECT 
+		    '업체 규모' AS CATEGORY,
+		    sc.SCALE_SIZE AS LABEL,
+		    COUNT(*) AS COUNT
+		FROM 
+		    CONTRACT c
+		JOIN STORAGE st ON c.STORAGE_ID = st.STORAGE_ID
+		JOIN SCALE sc ON c.SCALE_ID = sc.SCALE_ID
+		WHERE 1=1
+		  AND st.STORAGE_SIZE = #{storageId}
+		<if test="contractStart != null and contractStart != ''">
+		    AND 
+		    <choose>
+		        <!-- 연도만 전달된 경우 -->
+		        <when test="contractStart.length() == 4">
+		            SUBSTR(c.CONTRACT_START, 1, 4) = #{contractStart}
+		        </when>
+		        <!-- 월만 전달된 경우 -->
+		        <when test="contractStart.length() == 2">
+		            SUBSTR(c.CONTRACT_START, 5, 2) = #{contractStart}
+		        </when>
+		        <!-- 연도 + 월 전달된 경우 -->
+		        <otherwise>
+		            SUBSTR(c.CONTRACT_START, 1, 6) = #{contractStart}
+		        </otherwise>
+		    </choose>
+		</if>
+		  AND c.CONTRACT_STATUS IN ('1', '5')
+		GROUP BY sc.SCALE_SIZE
+		
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<select id="selectOptionYearsList" resultType="string">
+		SELECT DISTINCT 
+		     SUBSTR(CONTRACT_START,0,4) 
+		  FROM CONTRACT
+		 WHERE CONTRACT_START IS NOT NULL
+	</select>	
+	
+	
+	<select id="selectContractTypeList" resultType="ContractVO">
+		SELECT DISTINCT 
+		     CONTRACT_TYPE
+		  FROM CONTRACT
+        WHERE CONTRACT_TYPE IS NOT NULL
+		 
+	</select>
+	
+	<select id="selectEmpCountList" resultType="EmpCountVO">
+		SELECT 
+		     EMP_COUNT_ID
+		   , EMP_COUNT
+		  FROM EMP_COUNT
+	</select>
+
+	
+	<select id="selectTotalPaymentLastYear" resultType="PaymentVO">
+		SELECT 
+		    SUM(PAY_AMOUNT) AS PAY_TOTAL
+		  FROM PAYMENT
+		 WHERE 1=1
+		   AND TO_CHAR(PAY_DATE ,'YYYY') = #{payDate}
+
+		  
+	</select>
+	
+	<select id="selectTotalPaymentThisYear" resultType="PaymentVO">
+		SELECT 
+		    SUM(PAY_AMOUNT) AS PAY_TOTAL
+		FROM PAYMENT
+		WHERE 1=1
+		   AND TO_CHAR(PAY_DATE,'YYYY') = #{payDate}
+	</select>
+	
+	<!-- 격리 대상 시작  -->
+	<resultMap type="PaymentVO" id="paymentMap" autoMapping="true">
+		<association property="contract" autoMapping="true"></association>
+	</resultMap>
+	
+	<!-- YYYY년도 업종별 계약 수 조회 -->
+	<select id="selectContractTypeCountStat" resultType="map">
+		SELECT     
+		     CONTRACT_TYPE, COUNT(*) AS CONTRACT_COUNT
+		   		
+		  FROM CONTRACT
+		 WHERE 1=1 
+		   AND CONTRACT_TYPE IS NOT NULL
+		   AND CONTRACT_STATUS IN ('1', '5') 
+    	   AND CONTRACT_START BETWEEN TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYYMMDD') 
+                              AND TO_CHAR(SYSDATE, 'YYYYMMDD')
+		 GROUP BY CONTRACT_TYPE
+		 		
+	</select>
+	
+	<!-- 월별 계약수 조회 -->
+	<select id="selectMonthlyContractCountStat" resultType="map">
+		SELECT 
+		     TO_CHAR(TO_DATE(SUBSTR(P.PAY_ID, 1, 6), 'YYYYMM'), 'YYYY-MM') AS MONTH
+		   , COUNT(*) AS PAY_COUNT
+		  FROM PAYMENT P INNER JOIN CONTRACT C
+		                     ON P.CONTRACT_ID = C.CONTRACT_ID 
+		 WHERE LENGTH(PAY_ID) >= 6 
+		   AND (C.CONTRACT_STATUS = '1' OR C.CONTRACT_STATUS = '5') 
+		   AND C.CONTRACT_START BETWEEN TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYYMMDD') 
+                              AND TO_CHAR(SYSDATE, 'YYYYMMDD')
+		 GROUP BY TO_CHAR(TO_DATE(SUBSTR(P.PAY_ID, 1, 6), 'YYYYMM'), 'YYYY-MM')
+		 ORDER BY TO_CHAR(TO_DATE(SUBSTR(P.PAY_ID, 1, 6), 'YYYYMM'), 'YYYY-MM')
+		    
+	</select>
+	
+	<!-- YYYY년도 업체규모별 계약 수 -->
+	<select id="selectScaleCountStat" resultType="map">
+		SELECT 
+		     S.SCALE_SIZE 
+		   , C.SCALE_ID, COUNT(*) AS SCALE_COUNT
+		   
+		  FROM CONTRACT C INNER JOIN SCALE S 
+		                        ON C.SCALE_ID = S.SCALE_ID
+		 WHERE 1=1
+		   AND (C.CONTRACT_STATUS ='1' OR CONTRACT_STATUS = '5')
+		   AND C.CONTRACT_START BETWEEN TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYYMMDD') 
+                              AND TO_CHAR(SYSDATE, 'YYYYMMDD')
+		 GROUP BY C.SCALE_ID
+		        , S.SCALE_SIZE
+		        
+	</select>
+	
+	<!-- YYYY년 스토리지별 계약 수-->
+	<select id="selectStorageCountStat" resultType="map">
+		SELECT 
+		     S.STORAGE_SIZE 
+		   , C.STORAGE_ID, COUNT(*) AS STORAGE_COUNT
+		   
+		  FROM CONTRACT C INNER JOIN STORAGE S
+		                        ON C.STORAGE_ID = S.STORAGE_ID
+		 WHERE 1=1
+		   AND (C.CONTRACT_STATUS ='1' OR C.CONTRACT_STATUS='5')
+		   AND C.CONTRACT_START BETWEEN TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYYMMDD') 
+                              AND TO_CHAR(SYSDATE, 'YYYYMMDD')
+		 GROUP BY C.STORAGE_ID
+		        , S.STORAGE_SIZE
+		        
+	</select>
+	
+	<!-- YYYY년 사용인원 계약 수 -->
+	<select id="selectEmpCountStat" resultType="map">
+		SELECT 
+		     E.EMP_COUNT
+		   , C.EMP_COUNT_ID
+		   , COUNT(*) AS EMP_CNT 
+		  FROM CONTRACT C INNER JOIN EMP_COUNT E 
+		                        ON C.EMP_COUNT_ID = E.EMP_COUNT_ID
+		 WHERE 1=1 
+		   AND (C.CONTRACT_STATUS ='1' OR C.CONTRACT_STATUS ='5')
+		   AND C.CONTRACT_START BETWEEN TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYYMMDD') 
+                              AND TO_CHAR(SYSDATE, 'YYYYMMDD')
+		 GROUP BY C.EMP_COUNT_ID
+		        , E.EMP_COUNT
+		        
+	</select>
+	
+	<!-- 격리 대상 끝  -->
+	
+	
+</mapper>

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.notice.dao.NoticeMapper">
+
+	<!-- 검색 조건 -->
+	<sql id="searchFrag">
+		<where>
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(simpleCondition.searchWord)">
+				<choose>
+					<when test="simpleCondition.searchType eq 'title'">
+						INSTR(NOTICE_NAME, #{simpleCondition.searchWord}) > 0
+					</when>
+					<otherwise>
+						INSTR(NOTICE_NAME, #{simpleCondition.searchWord}) > 0
+					</otherwise>
+				</choose>
+			</if>
+		</where>
+	</sql>
+
+	<!-- 공지사항 총 레코드 수 -->
+	<select id="selectTotalRecord" resultType="int">
+		SELECT COUNT(NOTICE_NO)
+		FROM NOTICE
+		<include refid="searchFrag"/>
+	</select>
+
+
+	<select id="selectNoticeList" resultMap="noticeResultMap">
+		SELECT B.*
+		FROM
+		(
+			SELECT ROWNUM RNUM, A.*
+			FROM
+			(
+				SELECT
+				N.NOTICE_NO,
+				N.NOTICE_NAME,
+				N.NOTICE_CONTENT,
+				N.NOTICE_DATE,
+				N.NOTICE_IMPORTANT,
+				N.EMP_ID,
+				N.ATCH_FILE_ID,
+				(SELECT E.EMP_NAME
+				FROM EMPLOYEE E
+				WHERE E.EMP_ID = N.EMP_ID) AS EMP_NAME
+			FROM NOTICE N
+			<include refid="searchFrag"/>
+			ORDER BY
+				N.NOTICE_IMPORTANT DESC,
+				N.NOTICE_DATE DESC
+			) A
+		) B
+		WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+	</select>
+
+
+	<!-- 공지사항 상세 조회 -->
+	<select id="selectNoticeDetail" resultMap="noticeResultMap">
+		SELECT
+			   N.NOTICE_NO
+			 , N.NOTICE_NAME
+			 , N.NOTICE_CONTENT
+			 , N.NOTICE_DATE
+			 , N.NOTICE_IMPORTANT
+			 , N.EMP_ID
+			 , N.ATCH_FILE_ID
+				 , (SELECT E.EMP_NAME
+					FROM EMPLOYEE E
+					WHERE E.EMP_ID = N.EMP_ID) AS EMP_NAME -- 스칼라 서브쿼리로 사원명 조회
+				 , (SELECT E.POSI_ID
+					FROM EMPLOYEE E
+					WHERE E.EMP_ID = N.EMP_ID) AS POSI_ID -- 스칼라 서브쿼리로 직급 ID 조회
+		FROM NOTICE N
+		WHERE N.NOTICE_NO = #{noticeNo}
+	</select>
+
+
+
+	<!-- 공지사항 ResultMap -->
+	<resultMap id="noticeResultMap" type="kr.or.ddit.notice.vo.NoticeVO">
+		<id property="noticeNo" column="NOTICE_NO" />
+		<result property="noticeName" column="NOTICE_NAME" />
+		<result property="noticeContent" column="NOTICE_CONTENT" />
+		<result property="noticeDate" column="NOTICE_DATE" />
+		<result property="empId" column="EMP_ID" />
+		<result property="noticeImportant" column="NOTICE_IMPORTANT" />
+		<result property="atchFileId" column="ATCH_FILE_ID" />
+		<result property="rnum" column="RNUM"/>
+		<association property="atchFile" javaType="kr.or.ddit.atch.vo.AtchFileVO"
+					 select="kr.or.ddit.atch.dao.AtchFileMapper.selectAtchFileEnable" column="ATCH_FILE_ID" />
+
+		<!-- Employee 관계 설정 -->
+		<association property="employee" javaType="kr.or.ddit.employee.vo.EmployeeVO">
+			<id property="empId" column="EMP_ID" />
+			<result property="empName" column="EMP_NAME" />
+			<result property="posiId" column="POSI_ID" />
+		</association>
+	</resultMap>
+
+	<!-- 공지사항 글쓰기 -->
+	<insert id="insertNotice" parameterType="kr.or.ddit.notice.vo.NoticeVO">
+		<selectKey keyProperty="noticeNo" resultType="string" order="BEFORE">
+			SELECT NVL(MAX(TO_NUMBER(NOTICE_NO)), 0) + 1 AS NEXT_NO FROM NOTICE
+		</selectKey>
+		INSERT INTO NOTICE (
+		  NOTICE_NO
+		, NOTICE_NAME
+		, NOTICE_CONTENT
+		, NOTICE_DATE
+		, EMP_ID
+		, NOTICE_IMPORTANT
+		, ATCH_FILE_ID
+		) VALUES (
+		#{noticeNo, jdbcType=VARCHAR}
+		, #{noticeName, jdbcType=VARCHAR}
+		, #{noticeContent, jdbcType=VARCHAR}
+		<if test="noticeDate != null">
+			, #{noticeDate, jdbcType=DATE}
+		</if>
+		<if test="noticeDate == null">
+			, SYSDATE
+		</if>
+		, #{empId, jdbcType=VARCHAR}
+		, #{noticeImportant, jdbcType=VARCHAR}
+		, #{atchFileId, jdbcType=NUMERIC}
+		)
+	</insert>
+
+
+	<update id="updateNotice">
+		UPDATE NOTICE
+		SET
+			  NOTICE_NAME = #{noticeName, jdbcType=VARCHAR}
+			, NOTICE_CONTENT = #{noticeContent, jdbcType=VARCHAR}
+			, NOTICE_IMPORTANT = #{noticeImportant, jdbcType=VARCHAR}
+		<if test="atchFileId != null">
+			, ATCH_FILE_ID = #{atchFileId, jdbcType=NUMERIC}
+		</if>
+		WHERE NOTICE_NO = #{noticeNo}
+	</update>
+
+
+	<delete id="deleteNotice">
+		DELETE FROM NOTICE
+		WHERE NOTICE_NO = #{noticeNO}
+	</delete>
+
+</mapper>

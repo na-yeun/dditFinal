@@ -1,0 +1,111 @@
+@charset "UTF-8";
+
+.form-group {
+	display: flex; /* Flexbox 활성화 */
+	align-items: center; /* 수직 가운데 정렬 */
+	gap: 10px; /* 요소 간 간격 */
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+#form-group-date{
+	display: flex;
+	justify-content: space-between;
+}
+
+.date-form{
+	width: 440px;
+}
+
+.title {
+	padding-top: 8px;
+	padding-left: 8px;
+	padding-bottom: 8px;
+	width: 92px;
+	font-size: 16px;
+	font-weight: bold;
+	margin-bottom: 0;
+}
+
+
+.hidden {
+    display: none;
+ }
+
+
+/* 질문 구분이 잘 되도록 배경색 */
+.question {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background-color: rgba(24, 28, 33, 0.1);
+	margin-top: 10px;
+	margin-bottom: 10px;
+	font-weight: bold;
+	height: 38px;
+	line-height: 38px;
+	cursor: move;
+}
+
+.q-content-value {
+  margin-left: 10px; /* "질문"과 "이건 무슨 내용일까욤" 간격 조정 */
+  white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+}
+
+.collapse-icon{
+	margin-right: 20px;
+	cursor: pointer;
+}
+
+.question > span:last-child {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+}
+
+/* 질문의 설명 */
+.q-info{
+	color: red;
+	font-size: 13px;
+	margin-left:10px;
+	font-weight: normal;
+}
+
+.question-title {
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+/* 질문 내 항목들의 안내문 */
+.form-info {
+	color: red;
+	font-size: 13px;
+	margin-left:10px;
+}
+
+.dupleyn-check {
+	margin-left: 50px;
+}
+
+/* 질문 관련 버튼 영역 */
+.question-btn-area {
+	display: flex;
+	align-items: center;
+	width: 30%;
+	margin-top: 10px;
+}
+
+/*질문 관련 버튼 한개한개*/
+.question-btn-area button {
+	margin-left: 10px;
+}
+
+/* 등록 취소 버튼 영역 */
+.btn-area {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	justify-content: flex-end;
+	padding-top: 10px;
+	margin-bottom: 10px;
+}

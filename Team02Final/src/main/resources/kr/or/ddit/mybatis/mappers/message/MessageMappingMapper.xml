@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.message.dao.MessageMappingMapper">
+
+	<select id="selectMappingMessageList" resultType="MessageMappingVO">
+		SELECT
+			MAP_ID
+			,RECEIVE_ID
+			,SMES_ID
+			,MES_RECEREAD
+		FROM MESSAGE_MAPPING
+
+	</select>
+	
+	<select id="selectMappingMessageOne" resultType="MessageMappingVO">
+		SELECT
+			MAP_ID
+			,RECEIVE_ID
+			,SMES_ID
+			,MES_RECEREAD
+		FROM MESSAGE_MAPPING
+		WHERE SMES_ID = #{smesId}
+	</select>
+	
+	<insert id="insertMappingMessage">
+		INSERT INTO MESSAGE_MAPPING
+		(	
+			MAP_ID
+			,RECEIVE_ID
+			,SMES_ID
+			,MES_RECEREAD
+		)
+		VALUES
+		(
+			MAP_ID_SEQ.NEXTVAL
+			, #{receiveId,jdbcType=VARCHAR}
+			, #{smesId,jdbcType=VARCHAR}
+			, 'N'
+		
+		)
+	</insert>
+	
+	<delete id="deleteMappingMessage">
+		DELETE FROM MESSAGE_MAPPING
+		WHERE MAP_ID = #{mapId}
+	</delete>
+
+
+</mapper>

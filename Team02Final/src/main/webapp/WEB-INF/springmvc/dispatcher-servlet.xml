@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xsi:schemaLocation="http://www.springframework.org/schema/websocket http://www.springframework.org/schema/websocket/spring-websocket-4.3.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+
+	<!-- 웹소켓 -->
+	<beans:bean id="echoHandler"
+		class="kr.or.ddit.commons.websocket.EchoHandler" />
+
+	<websocket:handlers>
+		<websocket:mapping handler="echoHandler"
+			path="/echo" />
+		<websocket:handshake-interceptors>
+			<beans:bean
+				class="org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor" />
+		</websocket:handshake-interceptors>
+		<websocket:sockjs />
+	</websocket:handlers>
+
+
+	<context:component-scan
+		base-package="kr.or.ddit" use-default-filters="false">
+		<context:include-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+		<context:include-filter type="annotation"
+			expression="org.springframework.web.bind.annotation.ControllerAdvice" />
+	</context:component-scan>
+	<!-- WAS 가 가진 DefaultServlet 으로 처리하던 정적 자원에 대한 요청을 -->
+	<!-- 대신 처리할 Simple Handelr mapping 등록 -->
+	<mvc:resources mapping="/images/**"
+		location="file:///D:/multipartDir/saveDir/" />
+	<mvc:resources mapping="/resources/**"
+		location="/resources/" cache-period="0" />
+
+
+
+
+	<!-- HandlerMapping, HandelrAdapter, Validator를 자동 등록함. -->
+	<mvc:annotation-driven>
+		<!-- <mvc:argument-resolvers> -->
+		<!-- <bean class="org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver" 
+			/> -->
+		<!-- </mvc:argument-resolvers> -->
+		<mvc:message-converters>
+			<bean
+				class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+				<constructor-arg name="objectMapper"
+					ref="objectMapper" />
+			</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven> <!-- 핸들러들이 동작하게 만듦 -->
+
+	<!-- JSON 변환시 사용할 ObjectMapper 설정 -->
+	<bean
+		class="org.springframework.http.converter.json.Jackson2ObjectMapperFactoryBean"
+		id="objectMapper">
+		<property name="featuresToDisable">
+			<array>
+				<util:constant
+					static-field="com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS" />
+			</array>
+		</property>
+	</bean>
+
+	<bean
+		class="org.springframework.web.servlet.view.json.MappingJackson2JsonView"
+		id="jsonView">
+		<property name="objectMapper" ref="objectMapper" />
+	</bean>
+
+	<mvc:tiles-configurer>
+		<mvc:definitions location="/WEB-INF/tiles/*.xml" />
+	</mvc:tiles-configurer>
+
+	<mvc:view-resolvers>
+		<!-- accept request header를 기준으로 response content를 협상하는 전략 -->
+		<mvc:content-negotiation>
+			<mvc:default-views>
+				<ref bean="jsonView" />
+			</mvc:default-views>
+		</mvc:content-negotiation>
+		<!-- lvn == bean id -->
+		<mvc:bean-name />
+		<!-- lvn == definition name -->
+		<mvc:tiles />
+
+		<!-- 프로바이더 보호자원 아닌곳 single jsp 이동 위해 추가 (민재) ex) return "/ddit"; -->
+		<!-- <mvc:jsp prefix="/resources/jsp/" suffix=".jsp"/> -->
+
+		<!-- lvn == prefix + lvn + suffix 경로에 해당하는 single jsp로 응답 전송 -->
+		<mvc:jsp prefix="/WEB-INF/views/" suffix=".jsp" />
+
+
+
+	</mvc:view-resolvers>
+
+	<bean
+		class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor"
+		id="localeChangeInterceptor">
+		<property name="paramName" value="lang" />
+	</bean>
+
+	<bean
+		class="org.springframework.web.servlet.i18n.CookieLocaleResolver"
+		id="localeResolver">
+
+	</bean>
+
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<mvc:exclude-mapping path="/resources/**" />
+			<ref bean="localeChangeInterceptor" />
+		</mvc:interceptor>
+	</mvc:interceptors>
+
+
+
+</beans>

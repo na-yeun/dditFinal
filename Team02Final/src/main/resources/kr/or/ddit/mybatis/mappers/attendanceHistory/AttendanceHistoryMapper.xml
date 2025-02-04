@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.attendance.dao.AttendanceHistoryMapper">
+
+	
+	<sql id="searchListFrag">
+		<where>
+			<if test="variousCondition.empId != null">
+				EMP_ID = #{variousCondition.empId}
+			</if>
+			
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(variousCondition.startDate)">
+	            	<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(variousCondition.endDate)">
+	                AND(
+	                	ATTENDANCE_HISTORY.ATTHIS_ID BETWEEN #{variousCondition.startDate} 
+	                		AND #{variousCondition.endDate}
+	                )               
+	            	</if>
+	        	</if>
+        	</where>
+	</sql>
+
+	<select id="selectTotalRecord" resultType="int">
+		SELECT COUNT(*)
+		FROM ATTENDANCE_HISTORY
+		<include refid="searchListFrag" />
+	</select>
+	
+	<select id="selectAttendanceHistoryList" resultType="AttendanceHistoryVO">
+		SELECT B.*
+		FROM 
+		(
+			SELECT ROWNUM RNUM, A.*
+			FROM 
+			(
+				SELECT 
+				    ATTENDANCE_HISTORY.ATTHIS_ID,
+				    ATTENDANCE_HISTORY.EMP_ID,
+				    ATTENDANCE_HISTORY.HAHIS_TIME,
+				    ATTENDANCE_HISTORY.HLEAVE_TIME,
+				    ATTENDANCE_HISTORY.ATTHIS_CAUSE,
+				    ATTENDANCE_HISTORY.ATTHIS_OVER_YN,
+				    ATTENDANCE_HISTORY.ATTHIS_OVER,
+				    ATTENDANCE_HISTORY.ATTEND_ID,
+				    ATTENDANCE_HISTORY.ATTSTA_ID_IN,
+				    COMMON_CODE_IN.CODE_COMMENT AS IN_STATUS_NAME,
+				    ATTENDANCE_HISTORY.ATTSTA_ID_OUT,
+				    COMMON_CODE_OUT.CODE_COMMENT AS OUT_STATUS_NAME
+				FROM 
+				    ATTENDANCE_HISTORY
+				LEFT JOIN COMMON_CODE COMMON_CODE_IN
+				    ON ATTENDANCE_HISTORY.ATTSTA_ID_IN = COMMON_CODE_IN.CODE
+				    AND COMMON_CODE_IN.TABLE_NAME = 'ATTENDANCE_HISTORY'
+				    AND COMMON_CODE_IN.CODE_TYPE = '출근상태'
+				LEFT JOIN COMMON_CODE COMMON_CODE_OUT
+				    ON ATTENDANCE_HISTORY.ATTSTA_ID_OUT = COMMON_CODE_OUT.CODE
+				    AND COMMON_CODE_OUT.TABLE_NAME = 'ATTENDANCE_HISTORY'
+				    AND COMMON_CODE_OUT.CODE_TYPE = '퇴근상태'
+				<include refid="searchListFrag" />
+				ORDER BY ATTHIS_ID DESC
+			) A
+		)B
+		WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+	</select>
+
+
+</mapper>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.approval.dao.ApprovalFormMapper">
+
+    <resultMap id="approvalFormResultMap" type="kr.or.ddit.approval.vo.ApprovalFormVO">
+        <result property="apprformId" column="APPRFORM_ID"/>
+        <result property="apprformNm" column="APPRFORM_NM"/>
+        <result property="apprformContent" column="APPRFORM_CONTENT"/>
+    </resultMap>
+
+    <!-- 결재 양식 제목 조회 -->
+    <select id="selectFormTitles" resultMap="approvalFormResultMap">
+        SELECT
+               APPRFORM_ID
+             , APPRFORM_NM
+        FROM
+            APPROVAL_FORM
+    </select>
+
+    <select id="selectFormContent" resultType="string">
+        SELECT
+            APPRFORM_CONTENT
+        FROM
+            APPROVAL_FORM
+        WHERE
+            APPRFORM_ID = #{formId}
+    </select>
+
+</mapper>

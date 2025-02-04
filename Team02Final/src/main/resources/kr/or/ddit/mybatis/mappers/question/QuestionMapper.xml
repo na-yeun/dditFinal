@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.question.dao.QuestionMapper">
+	<sql id="questionColumns">
+		QU_NO , QU_TITLE , QU_CONTENT , QU_DATE , QU_YN ,
+		 ANSW_CONTENT , ANSW_DATE , QUESTION_ID , GORY_ID , ANSWER_ID, ATCH_FILE_ID, QU_SECRETYN
+	</sql>
+	
+	<sql id="searchFrag">
+    <where>
+        <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(simpleCondition.searchWord)">
+            <choose>
+                <when test="simpleCondition.searchType eq 'title'">
+                    INSTR(QU_TITLE, #{simpleCondition.searchWord}) > 0
+                </when>
+                <when test="simpleCondition.searchType eq 'writer'">
+                    EXISTS (
+                        SELECT 1
+                        FROM EMPLOYEE B
+                        WHERE B.EMP_ID = A.QUESTION_ID
+                        AND INSTR(B.EMP_NAME, #{simpleCondition.searchWord}) > 0
+                    )
+                </when>
+                <otherwise>
+                    (
+                        INSTR(QU_TITLE, #{simpleCondition.searchWord}) > 0
+                        OR EXISTS (
+                            SELECT 1
+                            FROM EMPLOYEE B
+                            WHERE B.EMP_ID = A.QUESTION_ID
+                            AND INSTR(B.EMP_NAME, #{simpleCondition.searchWord}) > 0
+                        )
+                    )
+                </otherwise>
+            </choose>
+	        </if>
+	    </where>
+	</sql>
+
+	
+	<insert id="insertQuestion" parameterType="QuestionVO">
+		<selectKey order="BEFORE" resultType="String" keyProperty="quNo">
+			SELECT QUESTION_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+		INSERT INTO QUESTION(
+			QU_NO, QU_TITLE, QU_CONTENT, QU_DATE, QU_YN, QUESTION_ID, GORY_ID, ATCH_FILE_ID , QU_SECRETYN
+		) VALUES(
+			#{quNo, jdbcType=NUMERIC} 
+			, #{quTitle,jdbcType=VARCHAR} 
+			, #{quContent,jdbcType=VARCHAR} 
+			, SYSDATE 
+			, 'N' 
+			, #{questionId,jdbcType=VARCHAR}
+			, #{goryId, jdbcType=VARCHAR}
+			, #{atchFileId,jdbcType=NUMERIC}
+			, #{quSecretyn,jdbcType=VARCHAR}
+		)
+	</insert>
+	
+	<select id="selectTotalRecord" resultType="int">
+		SELECT COUNT(A.QU_NO)
+			FROM QUESTION A
+			LEFT JOIN EMPLOYEE B ON A.QUESTION_ID = B.EMP_ID
+		<include refid="searchFrag"/>
+	</select>
+	
+	<resultMap type="QuestionVO" id="questionMap" autoMapping="true">
+		<id property="quNo" column="QU_NO" />
+		<result property="atchFileId" column="ATCH_FILE_ID"/>
+		<association property="atchFile" column="ATCH_FILE_ID"
+			select="kr.or.ddit.atch.dao.AtchFileMapper.selectAtchFileEnable"/>
+	</resultMap>
+	
+	<select id="selectQuestion" resultMap="questionMap">
+		SELECT
+			A.QU_NO
+			, A.QU_TITLE
+			, A.QU_CONTENT
+			, A.QU_DATE
+			, A.QU_YN
+			, A.ANSW_CONTENT 
+			, A.ANSW_DATE 
+			, A.QUESTION_ID 
+			, A.GORY_ID 
+			, A.ANSWER_ID
+			, A.ATCH_FILE_ID
+			, A.QU_SECRETYN
+			, B.EMP_NAME
+		FROM QUESTION A
+		INNER JOIN EMPLOYEE B ON A.QUESTION_ID = B.EMP_ID 
+		WHERE QU_NO = #{quNo}
+	</select>
+	
+	<select id="selectQuestionList" resultType="QuestionVO">
+		SELECT B.*
+		FROM
+		(
+			SELECT ROWNUM RNUM, A.*
+			FROM
+			(
+				SELECT
+					A.QU_NO
+					, A.QU_TITLE
+					, A.QU_CONTENT
+					, A.QU_DATE
+					, A.QU_YN
+					, A.ANSW_CONTENT 
+					, A.ANSW_DATE 
+					, A.QUESTION_ID 
+					, A.GORY_ID 
+					, A.ANSWER_ID
+					, A.ATCH_FILE_ID
+					, A.QU_SECRETYN
+					, B.EMP_NAME
+				FROM QUESTION A
+				INNER JOIN EMPLOYEE B ON A.QUESTION_ID = B.EMP_ID
+				<include refid="searchFrag"/>
+				ORDER BY QU_DATE DESC
+			) A
+		) B
+		<![CDATA[
+		WHERE RNUM >= #{startRow} AND RNUM <= #{endRow}
+		]]>
+	</select>
+	
+	<select id="selectCategoryList" resultType="CategoryVO">
+		SELECT GORY_ID, GORY_NM
+		FROM CATEGORY
+	</select>
+	
+	<update id="updateQuestion">
+		UPDATE QUESTION
+		SET
+			QU_TITLE = #{quTitle,jdbcType=VARCHAR}
+			,QU_CONTENT = #{quContent,jdbcType=VARCHAR}
+			, GORY_ID = #{goryId, jdbcType=VARCHAR}
+			<if test="atchFile neq null">
+				, ATCH_FILE_ID = #{atchFileId, jdbcType=NUMERIC}
+			</if>
+			WHERE QU_NO = #{quNo}
+	</update>
+	
+	<delete id="deleteQuestion">
+		DELETE FROM QUESTION
+		WHERE QU_NO = #{quNo}
+	</delete>
+	
+	<update id="updateAnswer">
+		UPDATE QUESTION
+		SET
+			QU_YN = 'Y'
+			,ANSWER_ID = #{answerId, jdbcType=VARCHAR}
+			,ANSW_CONTENT = #{answContent, jdbcType=VARCHAR}
+			,ANSW_DATE = SYSDATE
+		
+			WHERE QU_NO = #{quNo}
+	</update>
+	
+</mapper>

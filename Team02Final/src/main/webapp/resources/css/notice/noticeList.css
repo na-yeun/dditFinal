@@ -1,0 +1,17 @@
+
+.notice-list {
+    cursor: pointer;
+}
+
+.notice-list:hover {
+    background-color: #f8f9fa;
+}
+
+.notice-list:active {
+    background-color: #e9ecef;
+}
+
+.notice-link {
+    text-decoration: none;
+    color: inherit;
+}

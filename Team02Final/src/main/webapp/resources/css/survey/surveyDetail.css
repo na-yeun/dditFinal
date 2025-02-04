@@ -1,0 +1,48 @@
+@charset "UTF-8";
+
+.table-title{
+	background-color:rgb(236,237,253);
+	font-weight: bold;
+}
+
+.survey-question-content{
+	padding-top: 10px;
+	font-weight: bold;
+	color: black;
+	font-size:18px;
+}
+
+
+.multi-info{
+	font-size: 12px;
+	color: red;
+	padding-top:3px;
+}
+
+.input-select{
+	margin-left:5px;
+}
+
+.options-container {
+	margin-top: 10px;
+    display: flex; 
+    gap: 50px; 
+    justify-content: flex-start; 
+    align-items: center; 
+    text-align: center;
+}
+   
+.multi-options-container {
+	margin-top: 10px;
+       display: flex; 
+       gap: 10px; 
+       justify-content: space-between; 
+       align-items: center; 
+       text-align: center;
+   }
+   
+.btn-area{
+	display: flex;
+	justify-content: flex-end;
+	gap: 5px; 
+   }

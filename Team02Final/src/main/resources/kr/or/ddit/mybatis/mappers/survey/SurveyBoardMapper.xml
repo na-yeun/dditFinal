@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.survey.dao.SurveyMapper">
+	<resultMap id="surveyBoardMap" type="SurveyBoardVO" autoMapping="true">
+		<id property="sboardNo" column="SBOARD_NO"/>
+		<collection property="surveyQuestionList" ofType="SurveyQuestionVO" autoMapping="true">
+			<id property="surquesNo" column="SURQUES_NO"/>
+        	<id property="sboardNo" column="SBOARD_NO"/>
+			<collection property="surveyItemList" ofType="SurveyItemVO" autoMapping="true">
+				<id property="suritemNo" column="SURITEM_NO"/>
+	            <id property="surquesNo" column="SURQUES_NO"/>
+	            <id property="sboardNo" column="SBOARD_NO"/>
+			</collection>
+		</collection>
+	</resultMap>
+
+	<sql id="searchFrag">
+		<where>
+			<if test="simpleCondition neq null">
+				<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(simpleCondition.searchWord)">
+					<choose>
+						<when test="simpleCondition.searchType eq 'subject'">
+							INSTR(SURBOARD_NM, #{simpleCondition.searchWord}) > 0
+						</when>
+						<when test="simpleCondition.searchType eq 'content'">
+							INSTR(SURBOARD_CONTENT, #{simpleCondition.searchWord}) > 0
+						</when>
+						<otherwise>
+							INSTR(SURBOARD_NM, #{simpleCondition.searchWord}) > 0
+							OR
+							INSTR(SURBOARD_CONTENT, #{simpleCondition.searchWord}) > 0
+						</otherwise>
+					</choose>
+				</if>
+			</if>
+		</where>
+	</sql>
+	
+	
+	<select id="selectTotalRecord" resultType="int">
+		SELECT COUNT(*)
+		FROM SURVEY_BOARD
+		<include refid="searchFrag"/>
+	</select>
+	
+	<select id="selectSurveyBoardList" resultType="SurveyBoardVO">
+		SELECT B.*
+		FROM 
+		(
+			SELECT ROWNUM RNUM, A.*
+			FROM 
+			(
+				SELECT
+				    SBOARD_NO
+				    , SURBOARD_NM
+				    , SURBOARD_CONTENT
+				    , SURBOARD_WRITE
+				    , SURBOARD_STDATE
+				    , SURBOARD_ENDDATE
+				    , SURBOARD_YN
+				    , SURBOARD_TARGET
+				    , CASE SURBOARD_TARGET WHEN 'ALL' THEN '전체' 
+		                   ELSE (SELECT DEPART_NAME 
+		                   			FROM DEPARTMENT
+		                   			WHERE DEPARTMENT.DEPART_CODE = SURBOARD_TARGET
+		                   		)
+		        			END AS SURBOARD_TARGET_NAME
+				    , EMP_ID
+				    , (
+		                SELECT COUNT(*) 
+		                FROM SURVEY_RESULT
+		                WHERE SURVEY_RESULT.SBOARD_NO = SURVEY_BOARD.SBOARD_NO
+		                  AND SURVEY_RESULT.EMP_ID = #{variousCondition.empId}
+		            ) AS ROW_EXISTS
+						    
+				FROM SURVEY_BOARD
+				<include refid="searchFrag"/>
+				ORDER BY SURBOARD_YN DESC, SURBOARD_ENDDATE DESC
+			) A
+		) B
+		WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+	</select>
+
+	<select id="selectSurveyBoardDetail" resultMap="surveyBoardMap">
+		WITH V_SURVEY_QUESTION AS(
+		    SELECT
+		        SURVEY_QUESTION.SURQUES_NO
+		        , SURVEY_QUESTION.SBOARD_NO
+		        , SURVEY_QUESTION.SURQUES_CONTENT
+		        , SURVEY_QUESTION.SURQUES_DUPLEYN
+		        , SURVEY_QUESTION.SURQUES_ORDER
+		        , SURVEY_QUESTION.SURQUES_TYPE
+		        , SURVEY_ITEM.SURITEM_NO
+		        , SURVEY_ITEM.SURITEM_CONTENT
+		        , SURVEY_ITEM.SURITEM_INDEX
+		    FROM SURVEY_QUESTION RIGHT OUTER JOIN SURVEY_ITEM 
+		                ON (SURVEY_QUESTION.SBOARD_NO = SURVEY_ITEM.SBOARD_NO)
+		                AND (SURVEY_QUESTION.SURQUES_NO = SURVEY_ITEM.SURQUES_NO)
+		    ORDER BY SURVEY_QUESTION.SURQUES_ORDER, SURVEY_ITEM.SURITEM_INDEX
+		)
+		SELECT 
+		    SURVEY_BOARD.SBOARD_NO
+		    , SURVEY_BOARD.SURBOARD_NM
+		    , SURVEY_BOARD.SURBOARD_CONTENT
+		    , SURVEY_BOARD.SURBOARD_WRITE
+		    , SURVEY_BOARD.SURBOARD_STDATE
+		    , SURVEY_BOARD.SURBOARD_ENDDATE
+		    , SURVEY_BOARD.SURBOARD_YN
+		    , SURVEY_BOARD.SURBOARD_TARGET
+		    , CASE SURBOARD_TARGET WHEN 'ALL' THEN '전체' 
+                   ELSE (SELECT DEPART_NAME 
+                   			FROM DEPARTMENT
+                   			WHERE DEPARTMENT.DEPART_CODE = SURBOARD_TARGET
+                   		)
+        			END AS SURBOARD_TARGET_NAME
+		    , SURVEY_BOARD.EMP_ID
+		    , V_SURVEY_QUESTION.*
+		FROM SURVEY_BOARD RIGHT OUTER JOIN V_SURVEY_QUESTION 
+		            ON (SURVEY_BOARD.SBOARD_NO = V_SURVEY_QUESTION.SBOARD_NO)
+		WHERE SURVEY_BOARD.SBOARD_NO = #{sboardNo}
+	</select>
+	
+	<insert id="insertSurveyBoard" parameterType="SurveyBoardVO">
+		<selectKey keyProperty="sboardNo" resultType="string" order="BEFORE">
+			SELECT 
+			    CASE 
+			        WHEN MAX(SUBSTR(SBOARD_NO, 9, 3)) IS NOT NULL THEN 
+			            TO_CHAR(SYSDATE, 'YYYYMMDD') || 
+			            LPAD(TO_NUMBER(MAX(SUBSTR(SBOARD_NO, 9, 3))) + 1, 3, '0')
+			        ELSE 
+			            TO_CHAR(SYSDATE, 'YYYYMMDD') || '001'
+			    END AS NEXT_SBOARD_NO
+			FROM SURVEY_BOARD
+			WHERE SUBSTR(SBOARD_NO, 1, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD')			
+		</selectKey>
+		
+		INSERT INTO SURVEY_BOARD(
+			SBOARD_NO
+			, SURBOARD_NM
+			, SURBOARD_CONTENT
+			, SURBOARD_WRITE
+			, SURBOARD_STDATE
+			, SURBOARD_ENDDATE
+			, SURBOARD_YN
+			, SURBOARD_TARGET
+			, EMP_ID
+			, TOTAL_CNT
+		)
+		VALUES (
+			#{sboardNo}
+			, #{surboardNm}
+			, #{surboardContent}
+			, SYSDATE
+			, #{surboardStdate}
+			, #{surboardEnddate}
+			, CASE 
+	            WHEN #{surboardStdate} = TRUNC(SYSDATE) THEN 'Y'
+	            ELSE 'N'
+	          END
+			, CASE 
+	            WHEN (SELECT POSI_ID FROM EMPLOYEE WHERE EMP_ID = #{empId}) IN ('6', '7') THEN 'ALL'
+	            WHEN (SELECT POSI_ID FROM EMPLOYEE WHERE EMP_ID = #{empId}) IN ('3', '4') THEN 
+	                 (SELECT DEPART_CODE FROM EMPLOYEE WHERE EMP_ID = #{empId})
+	          END
+			, #{empId}
+			, CASE 
+			    WHEN (SELECT POSI_ID FROM EMPLOYEE WHERE EMP_ID = #{empId}) IN ('6', '7') THEN (SELECT COUNT(*) FROM EMPLOYEE)
+			    WHEN (SELECT POSI_ID FROM EMPLOYEE WHERE EMP_ID = #{empId}) IN ('3', '4') THEN 
+			         (SELECT COUNT(*)
+			            FROM EMPLOYEE
+			            WHERE DEPART_CODE = (SELECT DEPART_CODE FROM EMPLOYEE WHERE EMP_ID=#{empId}))
+			  END
+		)
+	</insert>
+	
+	<insert id="insertSurveyQuestion" parameterType="SurveyQuestionVO">
+		<selectKey keyProperty="surquesNo" resultType="string" order="BEFORE">
+			SELECT
+				 #{sboardNo} 
+				 || '_' 
+				 || LPAD(NVL(MAX(TO_NUMBER(SUBSTR(SURQUES_NO, INSTR(SURQUES_NO, '_') + 1))), 0) + 1, 
+									        3, 
+									        '0'
+						) 
+			FROM SURVEY_QUESTION
+			WHERE SBOARD_NO = #{sboardNo}
+		</selectKey>
+		
+		INSERT INTO SURVEY_QUESTION(
+			SURQUES_NO
+			, SBOARD_NO
+			, SURQUES_CONTENT
+			, SURQUES_DUPLEYN
+			, SURQUES_ORDER
+			, SURQUES_TYPE
+		)
+		VALUES(
+			#{surquesNo}
+			, #{sboardNo}
+			, #{surquesContent}
+			, #{surquesDupleyn}
+			, #{surquesOrder}
+			, #{surquesType}
+		)
+	</insert>
+	
+	<insert id="insertSurveyItem" parameterType="SurveyItemVO">
+		<selectKey keyProperty="suritemNo" resultType="string" order="BEFORE">
+			SELECT
+    			#{surquesNo}||'_'||LPAD(NVL(MAX(TO_NUMBER(SUBSTR(SURITEM_NO, 17))),0) + 1, 2, '0')
+			FROM SURVEY_ITEM
+			WHERE SBOARD_NO = #{sboardNo} AND SURQUES_NO = #{surquesNo}
+		</selectKey>
+		INSERT INTO SURVEY_ITEM(
+			SURITEM_NO
+			, SURQUES_NO
+			, SBOARD_NO
+			, SURITEM_CONTENT
+			, SURITEM_INDEX
+		)
+		VALUES(
+			#{suritemNo}
+			, #{surquesNo}
+			, #{sboardNo}
+			, #{suritemContent}
+			, #{suritemIndex}
+		)
+	</insert>
+	
+	
+	<update id="updateSurveyBoard" parameterType="SurveyBoardVO">
+		UPDATE SURVEY_BOARD
+		SET 
+			<trim prefixOverrides=",">
+				<if test="surboardNm neq null and surboardNm.length gt 0">
+					, SURBOARD_NM=#{surboardNm,jdbcType=VARCHAR}
+				</if>
+				<if test="surboardContent neq null and surboardContent.length gt 0">
+					, SURBOARD_CONTENT=#{surboardContent,jdbcType=CLOB}
+				</if>
+				<if test="surboardStdate neq null">
+					, SURBOARD_STDATE=#{surboardStdate,jdbcType=DATE}
+				</if>
+				<if test="surboardEnddate neq null">
+					, SURBOARD_ENDDATE=#{surboardEnddate,jdbcType=DATE}
+				</if>
+				<if test="surboardYn neq null and surboardYn.length gt 0">
+					, SURBOARD_YN=#{surboardYn,jdbcType=CHAR}
+				</if>
+			</trim>
+		WHERE SBOARD_NO = #{sboardNo}
+	</update>
+	
+	<update id="updateSurveyQuestion" parameterType="SurveyQuestionVO">
+		UPDATE SURVEY_QUESTION
+		SET
+			<trim prefixOverrides=",">
+				<if test="surquesContent neq null and surquesContent.length gt 0">
+					, SURQUES_CONTENT=#{surquesContent,jdbcType=VARCHAR}
+				</if>
+				<if test="surquesDupleyn neq null and surquesDupleyn.length gt 0">
+					, SURQUES_DUPLEYN=#{surquesDupleyn,jdbcType=CHAR}
+				</if>
+				<if test="surquesOrder neq null">
+					, SURQUES_ORDER=#{surquesOrder,jdbcType=NUMERIC}
+				</if>
+				<if test="surquesType neq null and surquesType.length gt 0">
+					, SURQUES_TYPE=#{surquesType,jdbcType=VARCHAR}
+				</if>
+			</trim>
+		WHERE SURQUES_NO=#{surquesNo} AND SBOARD_NO=#{sboardNo} 
+	
+	</update>
+	
+	<update id="updateSurveyItem" parameterType="SurveyItemVO">
+		UPDATE SURVEY_ITEM
+		SET 
+			<trim prefixOverrides=",">
+				<if test="suritemContent neq null and suritemContent.length gt 0">
+					, SURITEM_CONTENT=#{suritemContent,jdbcType=VARCHAR}
+				</if>
+				<if test="suritemIndex neq null">
+					, SURITEM_INDEX=#{suritemIndex,jdbcType=NUMERIC}
+				</if>
+			</trim>
+		WHERE SURITEM_NO = #{suritemNo} AND SURQUES_NO= #{surquesNo} AND SBOARD_NO = #{sboardNo}
+	</update>
+	
+	<!-- 게시물 삭제 눌렀을 경우 -->
+	<delete id="deleteSurveyBoard">
+		DELETE FROM SURVEY_BOARD
+		WHERE SBOARD_NO = #{sboardNo}
+	</delete>
+	
+	<delete id="deleteSurveyQuestionAll">
+		DELETE FROM SURVEY_QUESTION
+		WHERE SBOARD_NO = #{sboardNo}
+	</delete>
+	
+	<delete id="deleteSurveyItemAll">
+		DELETE FROM SURVEY_ITEM
+		WHERE SBOARD_NO = #{sboardNo}
+	</delete>
+	
+	<!-- 업데이트 실행시 삭제한 항목에 대한 부분 삭제 -->
+<!-- 	deleteSurveyQuestion -->
+<!-- 	deleteSurveyItemsWithQuestion -->
+<!-- 	deleteSurveyItem -->
+	<delete id="deleteSurveyQuestion">
+		DELETE FROM SURVEY_QUESTION
+		WHERE SURQUES_NO = #{surquesNo}
+	</delete>
+	
+	<delete id="deleteSurveyItemsWithQuestion">
+		DELETE FROM SURVEY_ITEM
+		WHERE SURQUES_NO = #{surquesNo}
+	</delete>
+	
+	<delete id="deleteSurveyItem">
+		DELETE FROM SURVEY_ITEM
+		WHERE SURITEM_NO = #{suritemNo}
+	</delete>
+	
+	
+	
+	
+</mapper>

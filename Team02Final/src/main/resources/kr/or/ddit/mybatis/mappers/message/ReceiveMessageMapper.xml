@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.message.dao.ReceiveMessageMapper">
+
+	
+	<resultMap type="ReceiveMessageVO" id="receiveList"
+		autoMapping="true">
+		<association property="employee" javaType="EmployeeVO"
+			autoMapping="true" />
+		<association property="depart" javaType="DepartmentVO"
+			autoMapping="true" />
+	</resultMap>
+
+
+	<select id="selectTotalRecord" parameterType="map" resultType="int">
+		WITH V_RECEIVE AS (
+	    SELECT
+	        MR.RMES_ID,
+	        MR.RSEND_ID,
+	        MR.RMES_TITLE,
+	        MR.RMES_CONTENT,
+	        MR.RMES_DATE,
+	        MR.RMES_READ,
+	        MR.REMERGENCY_YN,
+	        MR.RMESRECEIVE_ID,
+	        E.EMP_ID,
+	        E.EMP_NAME,
+	        E.DEPART_CODE
+	    FROM MESSAGE_RECEIVE MR
+	    INNER JOIN EMPLOYEE E
+	    ON MR.RSEND_ID = E.EMP_ID
+	    WHERE MR.RMESRECEIVE_ID = #{empId}
+	)
+	SELECT
+	    COUNT(VR.RMES_ID)
+	FROM V_RECEIVE VR
+	WHERE 1=1	<include refid="searchFlag" />
+	</select>
+
+	<sql id="searchFlag">
+			<if test="paging neq null and paging.simpleCondition neq null">
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+					<choose>
+						<when test="paging.simpleCondition.searchType eq 'send' ">
+						AND	VR.EMP_NAME LIKE'%'|| #{paging.simpleCondition.searchWord} ||'%'
+						</when>
+						<when test="paging.simpleCondition.searchType eq 'title' ">
+							AND INSTR(VR.RMES_TITLE, #{paging.simpleCondition.searchWord}) >0
+						</when>
+						<when test="paging.simpleCondition.searchType eq 'content' ">
+							AND INSTR(VR.RMES_CONTENT, #{paging.simpleCondition.searchWord}) >0
+						</when>
+						<otherwise>
+						
+							AND (INSTR(VR.EMP_NAME , #{paging.simpleCondition.searchWord}) >0
+							OR
+							INSTR(VR.RMES_TITLE, #{paging.simpleCondition.searchWord}) >0
+							OR 
+							INSTR(VR.RMES_CONTENT, #{paging.simpleCondition.searchWord}) >0
+							)
+						</otherwise>
+					</choose>
+				</if>
+			</if>
+	</sql>
+
+	<select id="selectReceiveMessageList" resultMap="receiveList">
+		WITH V_RECEIVE AS
+		(SELECT
+			MR.RMES_ID
+			,MR.RSEND_ID
+			,MR.RMES_TITLE
+			,MR.RMES_CONTENT
+			,MR.RMES_DATE
+			,MR.RMES_READ
+			,MR.REMERGENCY_YN
+			,MR.RMESRECEIVE_ID
+			,E.EMP_ID
+			,E.EMP_NAME
+			,E.DEPART_CODE
+		FROM MESSAGE_RECEIVE MR INNER JOIN EMPLOYEE E
+		ON MR.RSEND_ID = E.EMP_ID
+		WHERE MR.RMESRECEIVE_ID = #{empId}
+		)
+		SELECT A.*
+		FROM(SELECT
+		ROW_NUMBER() OVER(ORDER BY VR.RMES_DATE DESC) AS RNUM
+		,VR.RMES_ID
+		,VR.RSEND_ID
+		,VR.RMES_TITLE
+		,VR.RMES_CONTENT
+		,VR.RMES_DATE
+		,VR.RMES_READ
+		,VR.REMERGENCY_YN
+		,VR.RMESRECEIVE_ID
+		,VR.EMP_ID
+		,VR.EMP_NAME
+		,VR.DEPART_CODE
+		,D.DEPART_NAME
+		FROM V_RECEIVE VR INNER JOIN DEPARTMENT D
+			ON VR.DEPART_CODE = D.DEPART_CODE
+		WHERE 1=1 <include refid="searchFlag" />
+		ORDER BY VR.RMES_DATE DESC)A
+		
+		<if test="paging neq null">
+		    <![CDATA[
+		    WHERE RNUM >= #{paging.startRow} AND RNUM <= #{paging.endRow}
+		    ]]>
+		</if>
+	</select>
+
+	<select id="selectReceiveMessageOne" resultMap="receiveList">
+		WITH V_RECEIVE AS
+		(SELECT
+		MR.RMES_ID
+		,MR.RSEND_ID
+		,MR.RMES_TITLE
+		,MR.RMES_CONTENT
+		,MR.RMES_DATE
+		,MR.RMES_READ
+		,MR.REMERGENCY_YN
+		,MR.RMESRECEIVE_ID
+		,E.EMP_ID
+		,E.EMP_NAME
+		,E.DEPART_CODE
+		FROM MESSAGE_RECEIVE MR INNER JOIN
+		EMPLOYEE E
+		ON MR.RSEND_ID = E.EMP_ID)
+		SELECT
+		VR.RMES_ID
+		,VR.RSEND_ID
+		,VR.RMES_TITLE
+		,VR.RMES_CONTENT
+		,VR.RMES_DATE
+		,VR.RMES_READ
+		,VR.REMERGENCY_YN
+		,VR.RMESRECEIVE_ID
+		,VR.EMP_ID
+		,VR.EMP_NAME
+		,VR.DEPART_CODE
+		,D.DEPART_NAME
+		FROM V_RECEIVE VR INNER JOIN DEPARTMENT D
+		ON VR.DEPART_CODE = D.DEPART_CODE
+		WHERE VR.RMES_ID = #{rmesId} AND
+		VR.RMESRECEIVE_ID = #{empId}
+
+	</select>
+
+	<insert id="insertReceiveMessage"
+		parameterType="ReceiveMessageVO" useGeneratedKeys="true"
+		keyProperty="rmesId">
+		<selectKey keyProperty="rmesId" resultType="String"
+			order="BEFORE">
+			SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') || LPAD(RMES_SEQ.NEXTVAL, 5, '0') AS RMES_ID FROM DUAL
+		</selectKey>
+
+		INSERT INTO MESSAGE_RECEIVE
+		(
+		RMES_ID
+		,RSEND_ID
+		,RMES_TITLE
+		,RMES_CONTENT
+		,RMES_DATE
+		,RMES_READ
+		,REMERGENCY_YN
+		,RMESRECEIVE_ID
+		)
+		VALUES
+		(
+		#{rmesId,jdbcType=VARCHAR}
+		,#{rsendId,jdbcType=VARCHAR}
+		,#{rmesTitle,jdbcType=VARCHAR}
+		,#{rmesContent,jdbcType=VARCHAR}
+		,SYSDATE
+		,'N'
+		,#{remergencyYn,jdbcType=CHAR}
+		,#{rmesreceiveId,jdbcType=VARCHAR}
+		)
+
+	</insert>
+	
+	<update id="updateReceiveMessage">
+		UPDATE MESSAGE_RECEIVE
+		SET RMES_READ ='Y'
+		WHERE RMES_ID = #{rmesId}
+	</update>
+
+	<delete id="deleteReceiveMessage">
+		DELETE FROM MESSAGE_RECEIVE
+		WHERE RMES_ID = #{rmesId}
+	</delete>
+	
+</mapper>

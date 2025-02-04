@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.contract.dao.ContractMapper">
+
+	
+	<select id="selectAllScaleList" resultType="ScaleVO">
+		SELECT 
+		     SCALE_ID
+		   , SCALE_SIZE
+		   , SCALE_PRICE
+		  FROM SCALE
+	</select>
+	
+	<select id="selectAllEmpCountList" resultType="EmpCountVO">
+		SELECT 
+		     EMP_COUNT_ID
+		   , EMP_COUNT
+		   , EMP_COUNT_PRICE
+		  FROM EMP_COUNT
+	</select>
+	
+	<select id="selectAllStorageList" resultType="StorageVO">
+		SELECT 
+		     STORAGE_ID
+		   , STORAGE_SIZE
+		   , STORAGE_PRICE
+		  FROM STORAGE
+	</select>
+	
+	<resultMap type="ContractVO" id="contractVO" autoMapping="true">
+		<association property="scale" autoMapping="true"></association>
+		<association property="empCount" autoMapping="true"></association>
+		<association property="storage" autoMapping="true"></association>
+		<association property="fSetting" autoMapping="true"></association>
+		<collection property="paymentList" ofType="kr.or.ddit.contract.vo.PaymentVO" autoMapping="true"></collection>
+	</resultMap>
+	
+	
+	
+	<!-- 현재 계약중인 행 개수 조회  -->
+	<select id="selectTotalRecord" resultType="int">
+		SELECT COUNT(*)
+		  FROM CONTRACT C 
+		       INNER JOIN SCALE S ON C.SCALE_ID = S.SCALE_ID
+		 WHERE 1=1
+		   AND CONTRACT_STATUS = '1' 
+		   <if test="variousCondition.type != null and variousCondition.type != ''">
+		   AND C.CONTRACT_TYPE = #{variousCondition.type}
+		   </if> 
+		   <if test ="variousCondition.scaleSize != null and variousCondition.scaleSize != ''">
+		   AND S.SCALE_ID = #{variousCondition.scaleSize}
+		   </if>
+		   <if test="variousCondition.searchWord != null and variousCondition.searchWord != ''">
+		   AND (INSTR(C.CONTRACT_COMPANY, #{variousCondition.searchWord}) > 0)
+		   </if>
+	</select>
+	<!--  현재 계약중인 업체 목록 조회  -->
+	<select id="selectContINGCompanyList" resultMap="contractVO">
+		SELECT BB.*
+		  FROM(
+			SELECT ROWNUM RNUM, AA.*
+			  FROM (
+				SELECT 
+					 C.CONTRACT_ID			
+				   , C.CONTRACT_COMPANY
+				   , C.CONTRACT_NAME
+				   , C.CONTRACT_TEL
+				   , C.CONTRACT_START
+				   , C.CONTRACT_END
+				   , C.CONTRACT_TYPE 
+				   , S.SCALE_ID
+				   , S.SCALE_SIZE
+				     
+				  FROM CONTRACT C INNER JOIN SCALE S ON C.SCALE_ID = S.SCALE_ID
+				 WHERE 1=1
+				   AND CONTRACT_STATUS = '1'
+				   <if test="variousCondition.type != null and variousCondition.type!=''">
+				   AND C.CONTRACT_TYPE = #{variousCondition.type}
+				   </if> 
+				   <if test ="variousCondition.scaleSize != null and variousCondition.scaleSize != ''">
+				   AND S.SCALE_ID = #{variousCondition.scaleSize}
+				   </if>
+				   <if test="variousCondition.searchWord != null and variousCondition.searchWord!=''">
+				   AND (INSTR(C.CONTRACT_COMPANY, #{variousCondition.searchWord}) > 0)
+				   </if>
+			     ORDER BY C.CONTRACT_ID DESC
+		) AA
+	) BB
+	<![CDATA[
+	        WHERE RNUM >= #{startRow} AND RNUM <= #{endRow}
+    ]]>
+	</select>
+
+	<select id="selectScaleList" resultType="ScaleVO">
+		SELECT
+		     SCALE_ID
+		   , SCALE_SIZE
+		   , SCALE_PRICE
+		  FROM SCALE
+	</select>
+
+<!-- 계약업체 목록 다운로드 (필터옵션 가능)  -->
+	<select id="selectDownloadExcelContractingCompanyList" resultMap="contractVO">
+		SELECT 
+			 C.CONTRACT_ID
+		   , C.CONTRACT_COMPANY
+		   , C.CONTRACT_NAME
+		   , C.CONTRACT_TEL
+		   , C.CONTRACT_EMAIL
+		   , C.CONTRACT_START
+		   , C.CONTRACT_END 
+		   , C.CONTRACT_TYPE
+		   , EC.EMP_COUNT_ID
+		   , EC.EMP_COUNT
+		   , ST.STORAGE_ID
+		   , ST.STORAGE_SIZE
+		   , SC.SCALE_ID
+		   , SC.SCALE_SIZE
+		  FROM CONTRACT C 
+		       INNER JOIN EMP_COUNT EC ON C.EMP_COUNT_ID = EC.EMP_COUNT_ID
+		       INNER JOIN STORAGE ST ON C.STORAGE_ID = ST.STORAGE_ID
+		       INNER JOIN SCALE SC ON C.SCALE_ID = SC.SCALE_ID
+		 WHERE 1=1
+		   AND C.CONTRACT_STATUS = '1'
+   		   <if test="type != null and type!=''">
+		   AND C.CONTRACT_TYPE = #{type}
+	       </if> 
+		   <if test ="scaleSize != null and scaleSize != ''">
+		   AND SC.SCALE_ID = #{scaleSize}
+		   </if>
+		   <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(searchWord)">
+		   AND (INSTR(C.CONTRACT_COMPANY, #{searchWord}) > 0)
+		   </if>   
+	</select>
+
+	<select id="selectOneCompanyDetail" resultMap="contractVO">
+		SELECT 
+			 C.CONTRACT_ID
+		   , C.CONTRACT_COMPANY
+		   , C.CONTRACT_NAME
+		   , C.CONTRACT_TEL
+		   , C.CONTRACT_EMAIL
+		   , C.CONTRACT_START
+		   , C.CONTRACT_END
+		   , C.CONTRACT_TYPE
+		   , ST.STORAGE_ID
+		   , ST.STORAGE_SIZE
+		   , SC.SCALE_ID
+		   , SC.SCALE_SIZE
+		   , E.EMP_COUNT_ID
+		   , E.EMP_COUNT
+		   , P.PAY_AMOUNT
+		   , F.FIRST_POSITION
+		   , F.FIRST_DEPART
+		   , F.FIRST_EMPLOY
+		   , F.FIRST_ATTEND
+		   , F.FIRST_ELEC
+		   , F.FIRST_REQUEST_DATE
+		FROM CONTRACT C 
+		       INNER JOIN STORAGE ST ON C.STORAGE_ID = ST.STORAGE_ID
+		       INNER JOIN SCALE SC ON C.SCALE_ID = SC.SCALE_ID
+		       INNER JOIN EMP_COUNT E ON C.EMP_COUNT_ID = E.EMP_COUNT_ID
+		       INNER JOIN PAYMENT P ON C.CONTRACT_ID = P.CONTRACT_ID
+		       LEFT OUTER JOIN FIRST_SETTING F ON F.CONTRACT_ID = C.CONTRACT_ID
+		WHERE C.CONTRACT_ID = #{contractId}
+
+
+		
+	</select>
+	
+	
+	<update id="updateContractingCompanyInfo">
+		UPDATE CONTRACT 
+		   SET 
+		  	 CONTRACT_COMPANY = #{contractCompany}
+		   , CONTRACT_NAME = #{contractName}
+		   , CONTRACT_TYPE = #{contractType}
+		   , CONTRACT_TEL = #{contractTel}
+		   , CONTRACT_EMAIL = #{contractEmail}
+		 WHERE CONTRACT_ID = #{contractId}
+	</update>
+	
+	
+	<select id="selectWaitCompanyList" resultMap="contractVO">
+	SELECT BB.*
+	  FROM(
+		SELECT ROWNUM RNUM, AA.*
+		  FROM (
+			SELECT 
+			     CONTRACT_ID
+			   , CONTRACT_COMPANY
+			   , CONTRACT_NAME
+			   , CONTRACT_TEL 
+			   , CONTRACT_TYPE
+			   , CONTRACT_EMAIL
+			   , (SELECT PAY_DATE 
+			     	FROM PAYMENT 
+			       WHERE CONTRACT.CONTRACT_ID = PAYMENT.CONTRACT_ID) AS PAY_DATE			     
+			  FROM CONTRACT 
+			 WHERE CONTRACT_STATUS = '2'
+			   <if test="variousCondition.searchWord != null and variousCondition.searchWord != ''">
+			   AND (INSTR(CONTRACT_COMPANY, #{variousCondition.searchWord}) > 0)
+			   </if>
+			 ORDER BY PAY_DATE ASC
+		 	) AA
+		) BB
+	<![CDATA[
+        WHERE RNUM >= #{startRow} AND RNUM <= #{endRow}
+    ]]>
+	</select>
+	
+	<select id="selectWaitTotalCount" resultType="int">
+		SELECT COUNT(*)
+		  FROM CONTRACT 
+		 WHERE CONTRACT_STATUS = '2'
+	</select>
+	
+	
+	<select id="selectOneWaitCompanyDetail" resultMap="contractVO">
+		SELECT 
+		     C.CONTRACT_ID 
+		   , C.CONTRACT_COMPANY
+		   , C.CONTRACT_NAME
+		   , C.CONTRACT_TEL
+		   , C.CONTRACT_EMAIL
+		   , C.CONTRACT_START
+		   , C.CONTRACT_END
+		   , C.CONTRACT_TYPE
+		   , P.PAY_ID
+		   , P.PAY_AMOUNT
+		   , P.PAY_DATE
+		   , P.PAY_METHOD 
+		   , E.EMP_COUNT_ID
+		   , E.EMP_COUNT
+		   , E.EMP_COUNT_PRICE
+		   , ST.STORAGE_ID
+		   , ST.STORAGE_SIZE
+		   , ST.STORAGE_PRICE
+		   , SC.SCALE_ID
+		   , SC.SCALE_SIZE
+		   , SC.SCALE_PRICE
+		  FROM CONTRACT C 
+		       INNER JOIN PAYMENT P ON C.CONTRACT_ID = P.CONTRACT_ID
+		       INNER JOIN EMP_COUNT E ON C.EMP_COUNT_ID = E.EMP_COUNT_ID
+		       INNER JOIN SCALE SC ON C.SCALE_ID = SC.SCALE_ID
+		       INNER JOIN STORAGE ST ON C.STORAGE_ID = ST.STORAGE_ID
+		 WHERE 1=1
+		   AND C.CONTRACT_ID = #{contractId}
+		   AND C.CONTRACT_STATUS = '2'
+		   AND P.PAY_STATUS ='Y'
+	</select>
+	
+	<!-- PROV_ID는 수정해야 함.  -->
+	<update id="updateWaitCompanyStatusReject">
+		UPDATE CONTRACT
+		   SET CONTRACT_STATUS = '3'
+		     , CONTRACT_REJECT = #{contractReject}
+		     , PROV_ID = #{provId}
+		 WHERE CONTRACT_ID = #{contractId}
+	</update>
+		 
+		 
+		
+	<update id="updatePaymentStatusReject">
+		UPDATE PAYMENT
+	       SET PAY_STATUS = 'N'
+	     WHERE CONTRACT_ID = #{contractId}
+	
+	</update>
+	<!-- PROV_ID는 수정해야 함.  -->
+	<update id="updateWaitCompanyStatusOK">
+		UPDATE CONTRACT 
+		   SET CONTRACT_STATUS = '4'
+		     , CONTRACT_APPROVAL_DATE = SYSDATE
+		     , PROV_ID = #{provId}  
+		 WHERE CONTRACT_ID = #{contractId}
+	</update>
+	
+	
+	
+	<select id="selectFirstSettingTotalCount" resultType="int">
+		SELECT COUNT(*)
+		  FROM CONTRACT 
+		 WHERE CONTRACT_STATUS = '4'
+		 <if test="variousCondition.searchWord != null and variousCondition.searchWord != ''">
+			   AND (INSTR(CONTRACT_COMPANY, #{variousCondition.searchWord}) > 0)
+		 </if>
+	</select>
+	
+	<select id="selectWaitFirstSettingList" resultMap="contractVO">
+	
+	SELECT BB.*
+	  FROM(
+		SELECT ROWNUM RNUM, AA.*
+		  FROM (
+			SELECT 
+			     CONTRACT_ID
+			   , CONTRACT_COMPANY
+			   , CONTRACT_NAME
+			   , CONTRACT_TEL 
+			   , CONTRACT_TYPE
+			   , CONTRACT_EMAIL
+			   , (SELECT FIRST_REQUEST_DATE 
+			        FROM FIRST_SETTING 
+			       WHERE CONTRACT.CONTRACT_ID = FIRST_SETTING.CONTRACT_ID) AS FIRST_REQUEST_DATE			     
+			  FROM CONTRACT 
+			 WHERE CONTRACT_STATUS = '4'
+			<if test="variousCondition.searchWord != null and variousCondition.searchWord != ''">
+			   AND (INSTR(CONTRACT_COMPANY, #{variousCondition.searchWord}) > 0)
+			</if>
+			ORDER BY FIRST_REQUEST_DATE ASC
+		 	) AA
+		) BB
+	<![CDATA[
+        WHERE RNUM >= #{startRow} AND RNUM <= #{endRow}
+]]>
+	</select>
+	
+	<insert id="insertFirstSetting">
+		INSERT INTO FIRST_SETTING (
+			CONTRACT_ID 
+		  , FIRST_POSITION
+		  , FIRST_DEPART
+		  , FIRST_EMPLOY
+		  , FIRST_ATTEND
+		  , FIRST_ELEC
+		  , FIRST_REQUEST_DATE
+		  , USE_ELEC
+		)
+		VALUES(
+			#{contractId}
+		  , #{firstPosition}
+		  , #{firstDepart}
+		  , #{firstEmploy}
+		  , #{firstAttend}
+		  , #{firstElec}
+		  , SYSDATE
+		  , #{useElec}
+		)
+		
+	</insert>
+	
+	<insert id="insertContractRequestForm">
+		INSERT INTO CONTRACT
+		(
+			CONTRACT_ID
+		  , CONTRACT_COMPANY 
+		  , CONTRACT_NAME
+		  , CONTRACT_TEL
+		  , CONTRACT_EMAIL
+		  , CONTRACT_ADDR1
+		  , CONTRACT_ADDR2
+		  , CONTRACT_START
+		  , CONTRACT_END
+		  , CONTRACT_APPROVAL_DATE
+		  , CONTRACT_TYPE
+		  , CONTRACT_BUCKET
+		  , CONTRACT_STATUS
+		  , CONTRACT_REJECT
+		  , EMP_COUNT_ID
+		  , PROV_ID
+		  , STORAGE_ID
+		  , SCALE_ID 
+		)
+		VALUES 
+		(
+			  #{contractId, jdbcType=VARCHAR}
+			, #{contractCompany, jdbcType=VARCHAR}
+			, #{contractName, jdbcType=VARCHAR}
+			, #{contractTel, jdbcType=VARCHAR}
+			, #{contractEmail, jdbcType=VARCHAR}
+			, #{contractAddr1, jdbcType=VARCHAR}
+			, #{contractAddr2, jdbcType=VARCHAR}
+			, #{contractStart, jdbcType=VARCHAR}
+			, #{contractEnd, jdbcType=VARCHAR}
+			, null
+			, #{contractType, jdbcType=VARCHAR}
+			, null
+			, '2'
+			, null
+			, #{empCountId, jdbcType=VARCHAR}
+			, null
+			, #{storageId, jdbcType=VARCHAR}
+			, #{scaleId, jdbcType=VARCHAR}
+		)
+	
+	</insert>
+	<insert id="insertPayment">
+		INSERT INTO PAYMENT
+		(
+			  PAY_ID
+			, PAY_AMOUNT
+			, PAY_STATUS
+			, PAY_DATE
+			, PAY_METHOD
+			, CONTRACT_ID
+		)
+		VALUES 
+		(
+			  #{payId, jdbcType=VARCHAR}
+			, #{payAmount, jdbcType=NUMERIC}
+			, 'Y'
+			, SYSDATE
+			, '계좌이체'
+			, #{contractId, jdbcType=VARCHAR}
+		)
+		
+	
+	</insert>
+	
+	<select id="selectMaxContractIdByJoin" resultType="string">
+		SELECT MAX(CONTRACT_ID)
+		  FROM CONTRACT 
+		 WHERE CONTRACT_START = #{yyyymmdd}
+	</select>
+	
+	<select id="selectMaxPayIdByJoin" resultType="string">
+		SELECT MAX(PAY_ID)
+		  FROM PAYMENT 
+		 WHERE TO_CHAR(PAY_DATE,'YYYYMMDD') = #{aaaabbcc}
+	</select>
+	
+	
+	
+	<resultMap type="FirstSettingVO" id="firstSettingVO">
+		<association property="contract" autoMapping="true"></association>
+	</resultMap>
+	
+	<select id="selectOneFSettingDetail" resultMap="contractVO">
+		SELECT 
+		     C.CONTRACT_ID
+		   , F.CONTRACT_ID
+		   , C.CONTRACT_COMPANY
+		   , C.CONTRACT_NAME
+		   , F.FIRST_POSITION /*선택한 직급*/
+		   , F.FIRST_DEPART   /*선택한 부서*/
+		   , F.FIRST_EMPLOY	  /*선택한 휴가일수*/
+		   , F.FIRST_ATTEND	  /*출퇴근 시간*/
+		   , F.FIRST_ELEC     /*선택한 전자결재*/
+		   , F.FIRST_REQUEST_DATE /*신청일자*/
+		  FROM CONTRACT C
+		  INNER JOIN FIRST_SETTING F ON F.CONTRACT_ID = C.CONTRACT_ID
+		 WHERE 1=1
+		   AND F.CONTRACT_ID = #{contractId} 
+	</select>
+	
+	
+	
+	<update id="updateBucketAndStatus">
+		
+		UPDATE CONTRACT
+		   SET 
+		     CONTRACT_BUCKET = #{contractBucket}
+		   , CONTRACT_STATUS = '1'
+		 WHERE CONTRACT_ID = #{contractId}
+		
+	</update>
+	
+	<select id="selectContractStart" resultType="ContractVO">
+		SELECT 
+		    
+		     CONTRACT_START
+		  FROM CONTRACT
+		 WHERE CONTRACT_ID = #{contractId}
+	</select>
+	
+
+	
+	
+</mapper>

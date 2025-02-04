@@ -1,0 +1,79 @@
+@charset "UTF-8";
+
+#listtr:hover{
+	background-color:rgba(24,28,33, 0.03);
+}
+
+.mail-list-table tbody tr .clickTitle:hover{
+	cursor: pointer;
+}
+
+
+.form-control {
+    width: auto;
+}
+
+.search-area{
+	display: flex;
+	gap: 10px;
+    align-items: center;
+    justify-content: flex-end;
+    padding-top: 10px;
+}
+
+.modal-body-title{
+	width : 120px;
+	height: 50px;
+}
+
+.modal-body-main{
+	width : 1000px;
+	max-width: 1000px;
+}
+
+#attach-area{
+	width : 1000px;
+	height: 100px;
+	background-color: rgba(240, 236, 219, 0.3);
+}
+
+.th-checkbox{
+	width: 60px;	
+}
+.th-tofrom{
+	width: 300px;
+}
+.th-subject{
+	width: 570px;
+}
+.th-date{
+	width: 303px;
+}
+
+/* 모달의 z-index 유지 */
+.modal {
+    z-index: 1050 !important;
+}
+
+/* 모달 backdrop의 z-index */
+.modal-backdrop {
+    z-index: 1049 !important;
+}
+
+/* SweetAlert 팝업 z-index 설정 */
+.swal2-popup {
+    z-index: 1060 !important; /* SweetAlert가 모달 위로 올라오도록 */
+}
+
+/* SweetAlert의 backdrop(배경)도 모달 위에 표시 */
+.swal2-backdrop-show {
+    z-index: 1059 !important;
+}
+
+.mail-span{
+	text-transform: none;
+}
+
+.bg-label-info {
+    color: #2f7989 !important;
+}

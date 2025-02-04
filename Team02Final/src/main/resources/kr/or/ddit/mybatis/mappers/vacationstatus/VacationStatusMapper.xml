@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.vacation.dao.VacationStatusMapper">
+
+	<!-- 나연 추가 -->
+	<select id="selectVacationExist" resultType="int">
+		SELECT COUNT(*)
+			FROM VACATION_STATUS
+			WHERE VSTA_CODE = TO_CHAR(SYSDATE,'YYYY') AND EMP_ID=#{empId}
+	</select>
+
+	<!-- 나연 사용 -->
+	<!-- 새 직원 혹은 신년의 리스트 추가 -->
+	<insert id="insertVacationStatus">
+		INSERT INTO VACATION_STATUS
+		(
+		  VSTA_CODE
+		  , EMP_ID
+		  , VSTA_ALLCOUNT
+		  , VSTA_APPEND
+		  , VSTA_USE
+		  , VSTA_NOWCOUNT
+		  , VSTA_SICKCOUNT
+		)
+		VALUES(
+		    TO_CHAR(SYSDATE,'YYYY')
+		    ,#{empId}
+		    ,#{vstaAllcount}
+		    ,0
+		    ,0
+		    ,#{vstaAllcount}
+		    ,0
+		)
+	</insert>
+	
+	<update id="updateVacationStatus" parameterType="VacationStatusVO">
+		UPDATE VACATION_STATUS
+		SET
+			VSTA_APPEND = VSTA_APPEND + #{vstaAppend}
+			, VSTA_NOWCOUNT = VSTA_NOWCOUNT + #{vstaAppend}
+		WHERE
+			EMP_ID = #{empId}
+		  	AND VSTA_CODE = TO_CHAR(SYSDATE, 'YYYY')
+	</update>
+	
+	
+	<!-- 전체직원, 전체연도 리스트 조회 -->
+	<select id="selectVacationStatusList">
+	</select>
+	
+	
+	<!-- 전체 직원의 올해 휴가 현황 리스트 -->
+	<select id="selectVacationStatusThisYearList">
+	</select>
+	
+	
+	<!-- 직원 한 명의 전체 연도 휴가 현황 리스트 -->
+	<select id="selectVacationStatus">
+	</select>
+	
+	
+	<!-- 직원 한 명의 올해 휴가 현황 -->
+	<select id="selectVacationStatusThisYear" resultType="VacationStatusVO">
+		SELECT *
+		FROM VACATION_STATUS
+		WHERE EMP_ID=#{empId} 
+		    AND VSTA_CODE = (SELECT TO_CHAR(SYSDATE, 'YYYY')
+		                      FROM DUAL)
+	</select>
+	
+<!--	25.01.03 민경주 vsta인데 vsat으로 누가설정해놓은거 안먹혀서 그냥 주석처리해둡니다-->
+<!--	&lt;!&ndash; 직원 한 명의 현황 업데이트 &ndash;&gt;-->
+<!--	<update id="updateVacationStatus">-->
+<!--		UPDATE VACATION_STATUS-->
+<!--		SET-->
+<!--		<trim prefixOverrides=",">-->
+<!--		    <if test="vstaCode neq null and vstaCode.length gt 0">-->
+<!--		        , VSTA_CODE=#{vstaCode,jdbcType=CHAR}-->
+<!--		    </if>-->
+<!--		    <if test="empId neq null and empId.length gt 0">-->
+<!--		        , EMP_ID=#{empId,jdbcType=VARCHAR}-->
+<!--		    </if>-->
+<!--		    <if test="vsatAllcount neq null and vsatAllcount.length gt 0">-->
+<!--		        , VSAT_ALLCOUNT=#{vsatAllcount,jdbcType=NUMERIC}-->
+<!--		    </if>-->
+<!--		    <if test="vsatAppend neq null and vsatAppend.length gt 0">-->
+<!--		        , VSAT_APPEND=#{vsatAppend,jdbcType=NUMERIC}-->
+<!--		    </if>-->
+<!--		    <if test="vsatUse neq null and vsatUse.length gt 0">-->
+<!--		        , VSAT_USE=#{vsatUse,jdbcType=NUMERIC}-->
+<!--		    </if>-->
+<!--		    <if test="vsatNowcount neq null and vsatNowcount.length gt 0">-->
+<!--		        , VSAT_NOWCOUNT=#{vsatNowcount,jdbcType=NUMERIC}-->
+<!--		    </if>-->
+<!--		    <if test="vsatSickcount neq null and vsatSickcount.length gt 0">-->
+<!--		        , VSAT_SICKCOUNT=#{vsatSickcount,jdbcType=NUMERIC}-->
+<!--		    </if>-->
+<!--		</trim>-->
+<!--		WHERE EMP_ID=#{empId} -->
+<!--		    AND VSTA_CODE = (SELECT TO_CHAR(SYSDATE, 'YYYY')-->
+<!--		                      FROM DUAL)-->
+<!--	</update>-->
+
+	<!-- 직원 한 명의 현황 삭제 -->
+	<delete id="deleteVacationStatus">
+	</delete>
+
+	<!-- 휴가 종류 갖고오기 12.12 민경주 추가-->
+	<select id="selectVacationTypeList" resultType="map">
+		SELECT
+			  CODE AS vacCode
+			 ,CODE_COMMENT AS vacName
+		FROM COMMON_CODE
+		WHERE TABLE_NAME = 'VACATION'
+		  AND CODE_TYPE = '휴가종류'
+		ORDER BY CODE
+	</select>
+
+	<!-- 휴가 현황 업데이트 -->
+	<update id="updateVacationStatusCounts">
+		UPDATE VACATION_STATUS
+		SET
+			VSTA_USE = #{vstaUse},
+			VSTA_NOWCOUNT = #{vstaNowcount},
+			VSTA_SICKCOUNT = #{vstaSickcount}
+		WHERE
+			EMP_ID = #{empId}
+		  AND VSTA_CODE = (SELECT TO_CHAR(SYSDATE, 'YYYY') FROM DUAL)
+	</update>
+	
+	
+	
+</mapper>

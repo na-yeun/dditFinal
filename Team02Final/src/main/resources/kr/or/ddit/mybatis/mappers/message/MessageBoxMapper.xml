@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.message.dao.MessageBoxMapper">
+	
+	
+	<resultMap type="MessageBoxVO" id="mboxList" autoMapping="true">
+		<association property="employee" javaType="EmployeeVO" autoMapping="true"/>
+		<association property="depart" javaType="DepartmentVO" autoMapping="true"/>
+	</resultMap>
+	
+	
+	<select id="selectTotalRecord" parameterType="map" resultType="int">
+		WITH V_EMP AS ( SELECT
+			 MB.MBOX_ID
+			,MB.MBSEND_ID
+			,MB.MBRECEIVE_ID
+			,MB.MBSEND_DATE
+			,MB.MBOX_TITLE
+			,MB.MBOX_CONTENT
+			,E.EMP_ID
+            ,E.EMP_NAME
+            ,E.DEPART_CODE
+            ,MB.MBOX_EMERGENCYYN
+		FROM MESSAGE_BOX MB INNER JOIN EMPLOYEE E
+            ON MB.MBSEND_ID = E.EMP_ID
+        WHERE MB.MBRECEIVE_ID = #{empId}    
+        )
+		SELECT
+		COUNT(VE.MBOX_ID)
+		FROM V_EMP VE
+		WHERE 1=1
+		<include refid="searchFlag" />
+	</select>
+	
+	<sql id="searchFlag">
+			<if test="paging neq null and paging.simpleCondition neq null">
+				<if
+					test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+					<choose>
+						<when test="paging.simpleCondition.searchType eq 'send' ">
+							AND	VE.EMP_NAME LIKE'%'|| #{paging.simpleCondition.searchWord} ||'%'
+						</when>
+						<when test="paging.simpleCondition.searchType eq 'title' ">
+							AND INSTR(VE.MBOX_TITLE, #{paging.simpleCondition.searchWord}) >0
+						</when>
+						<when test="paging.simpleCondition.searchType eq 'content' ">
+							AND INSTR(VE.MBOX_CONTENT, #{paging.simpleCondition.searchWord}) >0
+						</when>
+						<otherwise>
+						
+							AND (INSTR(VE.EMP_NAME , #{paging.simpleCondition.searchWord}) >0
+							OR
+							INSTR(VE.MBOX_TITLE, #{paging.simpleCondition.searchWord}) >0
+							OR 
+							INSTR(VE.MBOX_CONTENT, #{paging.simpleCondition.searchWord}) >0
+							)
+						</otherwise>
+					</choose>
+				</if>
+			</if>
+	</sql>
+	
+	<select id="selectBoxMessageList" resultMap="mboxList">
+		WITH V_EMP AS ( SELECT
+			 MB.MBOX_ID
+			,MB.MBSEND_ID
+			,MB.MBRECEIVE_ID
+			,MB.MBSEND_DATE
+			,MB.MBOX_TITLE
+			,MB.MBOX_CONTENT
+			,E.EMP_ID
+            ,E.EMP_NAME
+            ,E.DEPART_CODE
+            ,MB.MBOX_EMERGENCYYN
+		FROM MESSAGE_BOX MB INNER JOIN EMPLOYEE E
+            ON MB.MBSEND_ID = E.EMP_ID
+        WHERE MB.MBRECEIVE_ID = #{empId}    
+        )
+		SELECT A.*
+		FROM (SELECT
+				
+				ROW_NUMBER() OVER (ORDER BY VE.MBSEND_DATE DESC) AS RNUM -- 날짜 기준으로 정렬
+				,VE.MBOX_ID
+				,VE.MBSEND_ID
+				,VE.MBRECEIVE_ID
+				,VE.MBSEND_DATE
+				,VE.MBOX_TITLE
+				,VE.MBOX_CONTENT
+				,VE.EMP_ID
+	            ,VE.EMP_NAME
+	            ,VE.DEPART_CODE
+	            ,VE.MBOX_EMERGENCYYN
+	            ,D.DEPART_NAME
+			FROM V_EMP VE INNER JOIN DEPARTMENT D ON VE.DEPART_CODE = D.DEPART_CODE
+			<include refid="searchFlag" />
+			)A
+			<if test="paging neq null">
+		    <![CDATA[
+		    WHERE RNUM >= #{paging.startRow} AND RNUM <= #{paging.endRow}
+		    ]]>
+		</if>
+	</select>
+	
+	<insert id="insertBoxMessage" parameterType="MessageBoxVO" useGeneratedKeys="true" keyProperty="mboxId">
+	
+		<selectKey keyProperty="mboxId" resultType="String" order="BEFORE">
+			SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') || LPAD(SEQ_MBOX_ID.NEXTVAL, 5, '0') AS MBOX_ID FROM DUAL
+		</selectKey>
+		INSERT INTO MESSAGE_BOX(
+			MBOX_ID
+			,MBSEND_ID
+			,MBRECEIVE_ID
+			,MBSEND_DATE
+			,MBOX_TITLE
+			,MBOX_CONTENT
+			,MBOX_EMERGENCYYN
+		
+		)
+		
+		VALUES(
+			#{mboxId,jdbcType=VARCHAR}
+			, #{mbsendId,jdbcType=VARCHAR}
+			, #{mbreceiveId,jdbcType=VARCHAR}
+			, #{mbsendDate,jdbcType=DATE}
+			, #{mboxTitle,jdbcType=VARCHAR}
+			, #{mboxContent,jdbcType=VARCHAR}
+			, #{mboxEmergencyyn,jdbcType=VARCHAR}
+		)
+		
+	</insert>
+	
+	<delete id="deleteBoxMessage">
+		DELETE FROM MESSAGE_BOX
+		WHERE MBOX_ID = #{mboxId}
+	</delete>
+</mapper>
+
+

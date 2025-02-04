@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.project.dao.ProjectMapper">
+	
+	<sql id="projCulumn">
+		PROJ_ID, PROJ_TITLE, PROJ_CONTENT, PROJ_SDATE, PROJ_EDATE, PROJ_STATUS, PROJ_REGIDATE, PROJ_EDITDATE, PROJ_LASTUP
+	</sql>
+	
+	<resultMap type="ProjectVO" id="projectMap" autoMapping="true">
+		<association property="projectDto" autoMapping="true"/>	
+	</resultMap>
+	
+	<select id="readProjectList" resultMap="projectMap">
+SELECT
+        A.PROJ_ID,
+        A.PROJ_TITLE,
+        A.PROJ_CONTENT,
+        TO_CHAR(TO_DATE(A.PROJ_SDATE, 'YYYYMMDD'), 'YYYY-MM-DD') AS PROJ_SDATE,
+        TO_CHAR(TO_DATE(A.PROJ_EDATE, 'YYYYMMDD'), 'YYYY-MM-DD') AS PROJ_EDATE,
+        C.CODE_COMMENT AS PROJ_STATUS,
+        A.PROJ_REGIDATE,
+        A.PROJ_EDITDATE,
+        A.PROJ_LASTUP,
+        B.EMP_NAME,
+        NVL(ROUND(AVG(T.TASK_PROGRESS), 2), 0) AS TASK_CALCULATE_PROGRESS -- 평균 진행률
+    FROM PROJECT A
+    LEFT JOIN EMPLOYEE B ON A.PROJ_LASTUP = B.EMP_ID
+    LEFT JOIN COMMON_CODE C ON A.PROJ_STATUS = C.CODE
+    LEFT JOIN PROJECT_MEMBER D ON A.PROJ_ID = D.PROJ_ID
+    LEFT JOIN PROJECT_TASK T ON A.PROJ_ID = T.PROJ_ID -- 프로젝트와 일감 연결
+    WHERE D.EMP_ID = #{empId} -- 특정 직원이 포함된 프로젝트
+    GROUP BY 
+        A.PROJ_ID, 
+        A.PROJ_TITLE, 
+        A.PROJ_CONTENT, 
+        A.PROJ_SDATE, 
+        A.PROJ_EDATE, 
+        C.CODE_COMMENT, 
+        A.PROJ_REGIDATE, 
+        A.PROJ_EDITDATE, 
+        A.PROJ_LASTUP, 
+        B.EMP_NAME
+    ORDER BY A.PROJ_SDATE DESC
+	</select>
+	
+	<select id="readProject" resultMap="projectMap">
+		SELECT
+		    A.PROJ_ID,
+		    A.PROJ_TITLE,
+		    A.PROJ_CONTENT,
+		    TO_CHAR(TO_DATE(A.PROJ_SDATE, 'YYYYMMDD'), 'YYYY-MM-DD') AS PROJ_SDATE,
+		    TO_CHAR(TO_DATE(A.PROJ_EDATE, 'YYYYMMDD'), 'YYYY-MM-DD') AS PROJ_EDATE,
+		    C.CODE_COMMENT,
+		    A.PROJ_STATUS,
+		    A.PROJ_REGIDATE,
+		    A.PROJ_EDITDATE,
+		    A.PROJ_LASTUP,
+		    B.EMP_NAME
+		FROM PROJECT A
+		LEFT JOIN EMPLOYEE B ON A.PROJ_LASTUP = B.EMP_ID
+		LEFT JOIN COMMON_CODE C ON A.PROJ_STATUS = C.CODE
+		WHERE A.PROJ_ID = #{projId}
+		ORDER BY A.PROJ_SDATE DESC
+	</select>
+	
+	<select id="readProjectNoProjId" resultType="String" parameterType="ProjectVO">
+		SELECT
+		  PROJ_ID
+		  FROM PROJECT
+		 WHERE PROJ_TITLE = #{projTitle}
+		   AND PROJ_CONTENT = #{projContent}
+		   AND PROJ_SDATE = TO_CHAR(#{projSdate}, 'YYYYMMDD')
+		   AND PROJ_EDATE = TO_CHAR(#{projEdate}, 'YYYYMMDD')
+	</select>
+	
+	<insert id="insertProject" parameterType="ProjectVO">
+		<selectKey order="BEFORE" keyProperty="projId" resultType="String">
+			SELECT PROJECT_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+	
+		INSERT INTO PROJECT(
+			<include refid="projCulumn"/>
+		) VALUES (
+			  #{projId, jdbcType=VARCHAR}
+			, #{projTitle, jdbcType=VARCHAR}
+			, #{projContent, jdbcType=VARCHAR}
+			, TO_CHAR(#{projSdate}, 'YYYYMMDD')
+    	    , TO_CHAR(#{projEdate}, 'YYYYMMDD')
+			, (
+				SELECT CODE
+				  FROM COMMON_CODE
+				 WHERE TABLE_NAME = 'PROJECT'
+				   AND CODE_COMMENT = '예정')
+			, SYSDATE
+			, NULL
+			, #{projLastup, jdbcType=VARCHAR}	
+		)
+	</insert>
+	
+	<update id="updateProject">
+		UPDATE PROJECT
+		    SET 
+		        PROJ_TITLE = #{projTitle}
+		        , PROJ_CONTENT = #{projContent}
+		        , PROJ_SDATE = TO_CHAR(#{projSdate}, 'YYYYMMDD')
+		        , PROJ_EDATE = TO_CHAR(#{projEdate}, 'YYYYMMDD')
+		        , PROJ_EDITDATE = SYSDATE
+		        , PROJ_STATUS = #{projStatus}
+		        , PROJ_LASTUP = #{projLastup}
+		WHERE PROJ_ID = #{projId}
+	</update>
+	
+	<delete id="deleteProject">
+		DELETE FROM PROJECT
+		WHERE PROJ_ID = #{projId}
+	</delete>
+	
+	<select id="readProjectMemberList" resultType="ProjectMemberVO">
+		SELECT
+		    A.PROJECT_MEMBERID,
+		    A.PROJ_ID,
+		    TO_DATE(A.JOIN_DATE, 'YYYYMMDD') AS JOIN_DATE,
+		    TO_DATE(A.LEAVE_DATE, 'YYYYMMDD') AS LEAVE_DATE,
+		    A.PROJECT_ROLENM,
+		    A.TEAM_ID,
+		    A.EMP_ID,
+		    B.EMP_NAME,
+		    C.CODE_COMMENT,
+		    D.DEPART_NAME
+		FROM PROJECT_MEMBER A
+		LEFT JOIN EMPLOYEE B ON A.EMP_ID = B.EMP_ID
+		LEFT JOIN COMMON_CODE C ON B.POSI_ID = C.CODE
+		LEFT JOIN DEPARTMENT D ON B.DEPART_CODE = D.DEPART_CODE
+	   WHERE A.PROJ_ID = #{projId}
+		 AND C.TABLE_NAME = 'EMPLOYEE'
+	</select>
+	
+	<insert id="insertProjectMember" parameterType="ProjectMemberVO">
+		<selectKey order="BEFORE" resultType="String" keyProperty="projectMemberid">
+			SELECT PROJECT_MEMBERID_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+	        INSERT INTO PROJECT_MEMBER (
+	            PROJECT_MEMBERID,
+	            PROJ_ID,
+	            JOIN_DATE,
+	            LEAVE_DATE,
+	            PROJECT_ROLENM,
+	            TEAM_ID,
+	            EMP_ID
+	        ) VALUES (
+	            #{projectMemberid, jdbcType=VARCHAR}
+	            , #{projId , jdbcType=VARCHAR}
+	            , #{joinDateForDb , jdbcType=CHAR}
+	            , #{leaveDateForDb, jdbcType=CHAR}
+	            , #{projectRolenm, jdbcType=VARCHAR}
+	            , #{teamId, jdbcType=VARCHAR}
+	            , #{empId, jdbcType=VARCHAR}
+	        )
+	</insert>
+
+	<select id="readProjectTaskList" resultType="ProjectTaskVO">
+		SELECT
+			TASK_ID
+			, TASK_NM
+			, TASK_CONTENT
+			, TO_DATE(TASK_SDATE, 'YYYY-MM-DD') AS TASK_SDATE
+			, TO_DATE(TASK_EDATE, 'YYYY-MM-DD') AS TASK_EDATE
+			, PROJECT_MEMBERID
+			, PROJ_ID
+			, TASK_DURATION
+			, TASK_PARENTID
+			, TASK_PROGRESS
+			, TASK_STATUS
+			, TASK_COLOR
+			, TASK_OPEN
+		FROM PROJECT_TASK
+		WHERE PROJ_ID = #{projId}
+		ORDER BY TASK_SDATE ASC
+		
+	</select>
+	
+	<insert id="insertProjectTask" parameterType="ProjectTaskVO">
+	    <selectKey order="BEFORE" resultType="String" keyProperty="taskId">
+	        SELECT TASK_ID_SEQ.NEXTVAL FROM DUAL
+	    </selectKey>
+	    INSERT INTO PROJECT_TASK (
+	        TASK_ID
+	        , TASK_NM
+	        , TASK_CONTENT
+	        , TASK_SDATE
+	        , TASK_EDATE
+	        , TASK_COLOR
+	        , PROJ_ID
+	        , TASK_PARENTID
+	        , TASK_PROGRESS
+	        , TASK_STATUS
+	        , TASK_DURATION
+	    ) VALUES (
+	        #{taskId, jdbcType=VARCHAR}
+	        , #{taskNm, jdbcType=VARCHAR}
+	        , #{taskContent, jdbcType=VARCHAR}
+	        , TO_CHAR(#{taskSdate, jdbcType=DATE}, 'YYYYMMDD')
+	        , TO_CHAR(#{taskEdate, jdbcType=DATE}, 'YYYYMMDD')
+	        , #{taskColor, jdbcType=VARCHAR}
+	        , #{projId, jdbcType=VARCHAR}
+	        , #{taskParentid, jdbcType=VARCHAR}
+	        , 1
+	        , '배정중'
+	        , #{taskDuration}
+	    )
+	</insert>
+
+
+	<select id="readProjectTask" resultType="ProjectTaskVO">
+		SELECT
+			A.TASK_ID
+			, A.TASK_NM
+			, A.TASK_CONTENT
+			, TO_DATE(A.TASK_SDATE, 'YYYY-MM-DD') AS TASK_SDATE
+			, TO_DATE(A.TASK_EDATE, 'YYYY-MM-DD') AS TASK_EDATE
+			, A.PROJECT_MEMBERID
+			, A.PROJ_ID
+			, A.TASK_DURATION
+			, A.TASK_PARENTID
+			, A.TASK_PROGRESS
+			, A.TASK_STATUS
+			, A.TASK_COLOR
+			, A.TASK_OPEN
+			, B.EMP_NAME
+		FROM PROJECT_TASK A
+        LEFT JOIN EMPLOYEE B ON A.PROJECT_MEMBERID = B.EMP_ID
+		WHERE PROJ_ID = #{projId}
+		  AND TASK_ID = #{taskId}
+	</select>
+
+	<update id="updateTask" parameterType="ProjectTaskVO">
+		UPDATE PROJECT_TASK
+			SET
+		    TASK_NM = #{taskNm}
+		  , TASK_CONTENT = #{taskContent}
+		  , TASK_SDATE = TO_CHAR(#{taskSdate, jdbcType=DATE}, 'YYYYMMDD')
+		  , TASK_EDATE = TO_CHAR(#{taskEdate, jdbcType=DATE}, 'YYYYMMDD')
+		  , PROJECT_MEMBERID = #{projectMemberid}
+		  , TASK_DURATION = #{taskDuration}
+		  , TASK_PROGRESS = #{taskProgress}
+		  , TASK_STATUS = #{taskStatus}
+		  , TASK_COLOR = #{taskColor}
+		WHERE TASK_ID = #{taskId}
+		  AND PROJ_ID = #{projId}
+	</update>
+	
+	<delete id="deleteTask" parameterType="String">
+		DELETE FROM PROJECT_TASK
+			WHERE TASK_ID = #{taskId}
+	</delete>
+	
+	<delete id="deletechildTask">
+		DELETE FROM PROJECT_TASK
+			WHERE TASK_PARENTID = #{taskId}
+	</delete>
+	
+	<select id="readTaskId" parameterType="ProjectTaskVO" resultType="ProjectTaskVO">
+		SELECT TASK_ID
+			FROM PROJECT_TASK
+		   WHERE TASK_NM = #{taskNm}
+	         AND TASK_CONTENT = #{taskContent}
+	         AND TASK_SDATE = TO_CHAR(#{taskSdate, jdbcType=DATE}, 'YYYYMMDD')
+	         AND TASK_EDATE = TO_CHAR(#{taskEdate, jdbcType=DATE}, 'YYYYMMDD')
+	         AND TASK_COLOR = #{taskColor}
+	         AND PROJ_ID = #{projId}
+	         AND TASK_DURATION = #{taskDuration}
+	</select>
+	
+	<select id="readTaskHistoryList" resultType="kr.or.ddit.project.vo.TaskHistoryVO">
+		SELECT 
+			  A.TASK_METHOD
+			, A.TASK_DATE
+			, A.TASK_TITLE
+			, B.EMP_NAME
+		  FROM TASK_HISTORY A
+		  LEFT JOIN EMPLOYEE B ON A.EMP_ID = B.EMP_ID
+		  WHERE TASK_ID = #{taskId}
+		  ORDER BY A.TASK_DATE DESC
+	</select>
+	
+	<insert id="insertTaskHistory" parameterType="kr.or.ddit.project.vo.TaskHistoryVO">
+		INSERT INTO TASK_HISTORY(
+			  TASK_ID
+			, TASK_METHOD
+			, EMP_ID
+			, TASK_DATE
+			, TASK_TITLE
+			, PROJ_ID
+		) VALUES (
+			  #{taskId}
+			, #{taskMethod}
+			, #{empId}
+			, SYSDATE
+			, #{taskTitle}
+			, #{projId}
+		)
+	</insert>
+	
+	<insert id="updateTaskHistory" parameterType="kr.or.ddit.project.vo.TaskHistoryVO">
+		INSERT INTO TASK_HISTORY(
+			  TASK_ID
+			, TASK_METHOD
+			, EMP_ID
+			, TASK_DATE
+			, TASK_TITLE
+			, PROJ_ID
+		) VALUES (
+			  #{taskId}
+			, #{taskMethod}
+			, #{empId}
+			, SYSDATE
+			, #{taskTitle}
+			, #{projId}
+		)
+	</insert>
+	
+	<insert id="deleteTaskHistory" parameterType="kr.or.ddit.project.vo.TaskHistoryVO">
+		INSERT INTO TASK_HISTORY(
+			  TASK_ID
+			, TASK_METHOD
+			, EMP_ID
+			, TASK_DATE
+			, TASK_TITLE
+			, PROJ_ID
+		) VALUES (
+			  #{taskId}
+			, #{taskMethod}
+			, #{empId}
+			, SYSDATE
+			, #{taskTitle}
+			, #{projId}
+		)
+	</insert>
+	
+	<select id="readTaskHistoryAll" resultType="TaskHistoryVO">
+		SELECT
+		    A.TASK_ID
+		    , A.TASK_METHOD
+		    , (SELECT EMP_NAME
+		    	 FROM EMPLOYEE
+		    	WHERE EMP_ID = A.EMP_ID) AS EMP_NAME
+		    , A.TASK_DATE
+		    , A.TASK_TITLE
+            , A.PROJ_ID
+		  FROM TASK_HISTORY A
+		  LEFT JOIN PROJECT_TASK B ON A.PROJ_ID = B.PROJ_ID AND A.TASK_ID = B.TASK_ID
+          WHERE A.PROJ_ID = #{projId}
+		  ORDER BY A.TASK_DATE DESC
+	</select>
+	
+	<select id="readProjectMember" resultType="ProjectMemberVO">
+		SELECT
+		    A.PROJECT_MEMBERID,
+		    A.PROJ_ID,
+		    TO_DATE(A.JOIN_DATE, 'YYYYMMDD') AS JOIN_DATE,
+		    TO_DATE(A.LEAVE_DATE, 'YYYYMMDD') AS LEAVE_DATE,
+		    A.PROJECT_ROLENM,
+		    A.TEAM_ID,
+		    A.EMP_ID,
+		    B.EMP_NAME,
+		    C.CODE_COMMENT,
+		    D.DEPART_NAME
+		FROM PROJECT_MEMBER A
+		LEFT JOIN EMPLOYEE B ON A.EMP_ID = B.EMP_ID
+		LEFT JOIN COMMON_CODE C ON B.POSI_ID = C.CODE
+		LEFT JOIN DEPARTMENT D ON B.DEPART_CODE = D.DEPART_CODE
+	   WHERE A.PROJECT_MEMBERID = #{projectMemberId}
+		 AND C.TABLE_NAME = 'EMPLOYEE'
+
+	</select>
+	
+	<update id="modifyProjectMember" parameterType="ProjectMemberVO">
+		UPDATE PROJECT_MEMBER
+			SET
+			  PROJECT_ROLENM = #{projectRolenm}
+			, JOIN_DATE = #{joinDateForDb , jdbcType=CHAR}
+			, LEAVE_DATE = #{leaveDateForDb, jdbcType=CHAR}
+		 WHERE PROJECT_MEMBERID = #{projectMemberid}
+	</update>
+	
+	<delete id="removeProjectMember" parameterType="String">
+		DELETE FROM PROJECT_MEMBER
+		 WHERE PROJECT_MEMBERID = #{projectMemberid}
+	</delete>
+	
+</mapper>

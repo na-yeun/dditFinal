@@ -1,0 +1,39 @@
+@charset "UTF-8";
+
+table tbody tr:hover {
+	cursor: pointer;
+	background-color:rgba(24,28,33, 0.03);
+}
+
+table thead, table tbody {
+	text-align: center;
+}
+
+table thead, table tbody {
+	text-align: center;
+}
+
+.survey-subject {
+	text-align: left;
+}
+
+#searchType {
+	width: 100px;
+}
+
+#searchWord {
+	width: 200px;
+}
+
+.search-area {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	justify-content: flex-end;
+	padding-top: 10px;
+}
+
+.insert-btn-area{
+	display: flex;
+	justify-content: flex-end;
+}

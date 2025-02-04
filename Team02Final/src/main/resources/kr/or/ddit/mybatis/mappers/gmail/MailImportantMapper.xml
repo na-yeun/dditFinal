@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.gmail.dao.MailImportantMapper">
+
+<resultMap type="MailImportantVO" id="importantMap" autoMapping="true">
+	<id property="empId" column="EMP_ID"/>
+	<id property="empMail" column="EMP_MAIL"/>
+	<id property="mailMessageId" column="MAIL_MESSAGE_ID"/>
+	<collection property="mailAttachmentList" ofType="MailAttachmentVO" autoMapping="true">
+	</collection>
+</resultMap>
+
+<sql id="searchListFrag">
+	<if test="variousCondition neq null">
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(variousCondition.value)">
+				<choose>
+                    <when test="variousCondition.type eq 'to'">
+                        AND INSTR(IMAIL_TO, #{variousCondition.value}) > 0
+                    </when>
+                    <when test="variousCondition.type eq 'from'">
+                        AND INSTR(IMAIL_FROM, #{variousCondition.value}) > 0
+                    </when>
+                    <when test="variousCondition.type eq 'title'">
+                        AND INSTR(IMAIL_SUBJECT, #{variousCondition.value}) > 0
+                    </when>
+                    <when test="variousCondition.type eq 'content'">
+                        AND INSTR(IMAIL_CONTENT, #{variousCondition.value}) > 0
+                    </when>
+                    <when test="variousCondition.type eq 'itype'">
+                        AND INSTR(IMAIL_TYPE, #{variousCondition.value}) > 0
+                    </when>
+                    <otherwise>
+                        AND (
+                            INSTR(IMAIL_TO, #{variousCondition.value}) > 0
+                            OR INSTR(IMAIL_FROM, #{variousCondition.value}) > 0
+                            OR IINSTR(IMAIL_SUBJECT, #{variousCondition.value}) > 0
+                            OR INSTR(IMAIL_CONTENT, #{variousCondition.value}) > 0
+                            OR INSTR(IMAIL_TYPE, #{variousCondition.value}) > 0
+                        )
+                    </otherwise>
+               	</choose>
+			</if>
+	</if>
+</sql>
+
+<select id="selectTotalRecord" resultType="int">
+	SELECT COUNT(*)
+	FROM MAIL_IMPORTANT
+	WHERE EMP_MAIL=#{variousCondition.empMail}
+	<include refid="searchListFrag" />
+</select>
+
+	
+<select id="selectImportantMailList" resultType="MailImportantVO">
+	SELECT B.*
+	FROM 
+	(
+		SELECT ROWNUM RNUM, A.*
+		FROM 
+		(
+			SELECT
+                EMP_ID
+                , EMP_MAIL
+                , MAIL_MESSAGE_ID
+                , IMAIL_TO
+                , IMAIL_FROM
+                , IMAIL_DATE
+                , IMAIL_SUBJECT
+            FROM MAIL_IMPORTANT
+            WHERE EMP_MAIL=#{variousCondition.empMail}
+            <include refid="searchListFrag" />
+            ORDER BY IMAIL_DATE DESC
+		) A
+	) B
+	WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+</select>
+
+<select id="selectImportantMailDetail" resultMap="importantMap">
+	SELECT MAIL_IMPORTANT.EMP_ID
+		, MAIL_IMPORTANT.EMP_MAIL
+		, MAIL_IMPORTANT.MAIL_MESSAGE_ID
+		, MAIL_IMPORTANT.IMAIL_TO
+		, MAIL_IMPORTANT.IMAIL_CC
+		, MAIL_IMPORTANT.IMAIL_BCC
+		, MAIL_IMPORTANT.IMAIL_FROM
+		, MAIL_IMPORTANT.IMAIL_REPLY_TO
+		, MAIL_IMPORTANT.IMAIL_SUBJECT
+		, MAIL_IMPORTANT.IMAIL_DATE
+		, MAIL_IMPORTANT.IMAIL_CONTENT_TYPE
+		, MAIL_IMPORTANT.IMAIL_CONTENT
+      	, MAIL_ATTACHMENT.EMP_ID
+ 		, MAIL_ATTACHMENT.EMP_MAIL
+ 		, MAIL_ATTACHMENT.MAILMESSAGE_ID
+ 		, MAIL_ATTACHMENT.MAILATTACHMENT_ID
+ 		, MAIL_ATTACHMENT.MAILATTACHMENT_NAME
+ 		, MAIL_ATTACHMENT.MAILATTACHMENT_MIMETYPE	
+	FROM MAIL_IMPORTANT
+	LEFT OUTER JOIN MAIL_ATTACHMENT
+	ON MAIL_IMPORTANT.MAIL_MESSAGE_ID = MAIL_ATTACHMENT.MAILMESSAGE_ID
+	WHERE MAIL_IMPORTANT.MAIL_MESSAGE_ID = #{messageId}
+</select>
+
+
+<select id="selectLastApiCallTime" resultType="String">
+	SELECT IMAIL_CALLTIME
+		FROM (
+		    SELECT IMAIL_CALLTIME
+		    FROM MAIL_IMPORTANT
+		    WHERE EMP_MAIL = #{empMail}
+		    ORDER BY IMAIL_CALLTIME DESC
+		)
+		WHERE ROWNUM = 1
+</select>
+
+
+<select id="selectImportantMailExist" resultType="int">
+	SELECT COUNT(*)
+	FROM MAIL_IMPORTANT
+	WHERE EMP_ID=#{empId}
+		AND EMP_MAIL=#{empMail}
+		AND MAIL_MESSAGE_ID=#{mailMessageId}
+</select>
+
+
+<insert id="insertImportantMail" parameterType="MailDraftVO">
+	INSERT INTO MAIL_IMPORTANT(
+		EMP_ID
+		, EMP_MAIL
+		, MAIL_MESSAGE_ID
+		, IMAIL_TO
+		, IMAIL_FROM
+		, IMAIL_SUBJECT
+		, IMAIL_DATE
+		, IMAIL_CONTENT_TYPE
+		, IMAIL_CONTENT
+		, IMAIL_CC
+		, IMAIL_BCC
+		, IMAIL_REPLY_TO
+		, IMAIL_CALLTIME
+	)
+	VALUES(
+		#{empId,jdbcType=VARCHAR}
+		, #{empMail,jdbcType=VARCHAR}
+		, #{mailMessageId,jdbcType=VARCHAR}
+		, #{imailTo,jdbcType=VARCHAR}
+		, #{imailFrom,jdbcType=VARCHAR}
+		, #{imailSubject,jdbcType=VARCHAR}
+		, #{imailDate,jdbcType=VARCHAR}
+		, #{imailContentType,jdbcType=VARCHAR}
+		, #{imailContent,jdbcType=CLOB}
+		, #{imailCc,jdbcType=VARCHAR}
+		, #{imailBcc,jdbcType=VARCHAR}
+		, #{imailReplyTo,jdbcType=VARCHAR}
+		, #{imailCalltime,jdbcType=VARCHAR}
+	)
+</insert>
+
+<delete id="deleteImportantMail">
+	DELETE FROM MAIL_IMPORTANT
+	WHERE MAIL_MESSAGE_ID=#{mailMessageid}
+</delete>
+
+</mapper>

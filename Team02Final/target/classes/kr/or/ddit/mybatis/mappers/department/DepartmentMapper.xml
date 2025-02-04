@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.department.dao.DepartmentMapper">
+
+
+	<sql id="departmentColumns">
+		DEPART_CODE, DEPART_PARENTCODE, CONTRACT_ID, DEPART_NAME,
+        DEPART_STATUS, DEPART_HEAD
+	</sql>
+
+	<resultMap id="departmentResultMap" type="kr.or.ddit.organitree.vo.DepartmentVO">
+		<result property="departCode" column="DEPART_CODE"/>
+		<result property="departParentcode" column="DEPART_PARENTCODE"/>
+		<result property="contractId" column="CONTRACT_ID"/>
+		<result property="departName" column="DEPART_NAME"/>
+		<result property="departStatus" column="DEPART_STATUS"/>
+		<result property="departHead" column="DEPART_HEAD"/>
+	</resultMap>
+
+
+	<select id="selectDepartNameByDepartCode" resultType="String">
+		SELECT DEPART_NAME
+		FROM DEPARTMENT
+		WHERE DEPART_CODE = #{departCode}
+	</select>
+
+	<select id="selectDepartmentList" resultMap="departmentResultMap">
+		SELECT
+			DEPART_CODE,
+			DEPART_PARENTCODE,
+			CONTRACT_ID,
+			DEPART_NAME,
+			DEPART_STATUS,
+			DEPART_HEAD
+		FROM
+			DEPARTMENT
+		ORDER BY
+			DEPART_CODE
+	</select>
+
+</mapper>

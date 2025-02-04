@@ -1,0 +1,81 @@
+/* 기존 스타일 유지 */
+@charset "UTF-8";
+
+rowOne:hover {
+	background-color: #f5f5f5;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}  
+
+.container .form-item {
+    margin-bottom: 20px;
+}
+
+.container .form-label {
+    font-size: 18px;
+    color: #495057;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.container .form-value {
+    font-size: 16px;
+    color: #6c757d;
+	font-weight: bold;
+}
+
+.container .form-value ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.container .form-value li.list-item {
+    padding: 5px 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    font-size: 14px;
+    color: #495057;
+}
+
+/* === ✅ 새로운 CSS 추가 === */
+/* 금액, 수단, 일자 한 줄에 배치 */
+.row-three-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+/* 사용인원, 업체규모, 용량 한 줄에 배치 */
+.row-three-item .form-item {
+    flex: 1 1 30%;
+    min-width: 200px;
+}
+
+/* 계약기간 단독 배치 */
+.full-width-item {
+    flex: 1 1 100%;
+    margin-top: 20px;
+}
+
+/* 기존 인라인 스타일 유지 */
+.inline-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.inline-value {
+    display: inline-block;
+    background-color: #f8f9fa;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    font-size: 14px;
+    color: #495057;
+    white-space: nowrap;
+}
