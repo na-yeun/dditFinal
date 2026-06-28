@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.timeReservation.dao.TimeReservationMapper">
+
+<select id="selectTimeReserList" resultType="TimeReservationVO">
+	SELECT TIME_CODE, TIME_RANGE
+	FROM TIME_RESERVATION
+</select>
+
+<select id="selectTimeReser" resultType="TimeReservationVO">
+	SELECT TIME_CODE, TIME_RANGE
+	FROM TIME_RESERVATION
+	WHERE TIME_CODE = #{timeCode}
+</select>
+
+<insert id="insertTimeReser">
+	INSERT TIME_RESERVATION
+	VALUE(
+		#{timeCode,jdbcType=VARCHAR}
+		,#{timeRange,jdbcType=VARCHAR}
+	)
+</insert>
+
+<update id="updateTimeReser">
+	UPDATE TIME_RESERVATION
+	SET
+		TIME_RANGE= #{timeRange,jdbcType=VARCHAR}
+	WHERE TIME_CODE = #{timeCode}
+</update>
+
+<delete id="deleteTimeReser">
+	DELETE FROM TIME_RESERVATION 
+	WHERE TIME_CODE = #{timeCode}
+</delete>
+
+
+</mapper>

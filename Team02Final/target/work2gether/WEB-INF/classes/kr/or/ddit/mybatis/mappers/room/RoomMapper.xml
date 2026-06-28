@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.room.dao.RoomMapper">
+
+	<resultMap type="RoomVO" id="roomYn" autoMapping="true">
+		<association property="comCode" javaType="CommonCodeVO" autoMapping="true" />
+		<collection property="roomTimeList" javaType="RoomTimeVO" autoMapping="true"/>
+		<collection property="roomReserList" javaType="RoomReservationVO" autoMapping="true"/>
+	</resultMap>
+	
+	<resultMap type="RoomVO" id="roomList" autoMapping="true">
+		<association property="comCode" javaType="CommonCodeVO" autoMapping="true" />
+	</resultMap>
+
+
+	<select id="selectTotalRecord" resultType="int">
+		SELECT COUNT(R.ROOM_ID)
+		FROM ROOM R
+		WHERE 1=1
+		 <include refid="searchFrag" />
+	</select>
+	
+	<sql id="searchFrag">
+		<if test="paging.simpleCondition neq null">
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+				AND R.ROOM_GORY = #{paging.simpleCondition.searchWord}
+			</if>
+			
+		</if>
+	</sql>
+
+	<select id="roomCount" resultType="int">
+		WITH V_TIME AS (
+		SELECT
+			RT.ROOM_ID,
+			RT.TIME_CODE,
+			RT.ROOMTIME_YN,
+			RT.TROOM_IMG,
+			R.ROOM_HOSU,
+			R.ROOM_NAME,
+			R.ROOM_NUM,
+			R.ROOM_IMG,
+			R.ROOM_DETAIL,
+			R.ROOM_YN
+		FROM ROOM_TIME RT
+		INNER JOIN ROOM R ON RT.ROOM_ID = R.ROOM_ID
+		),
+		V_ROOMTIME AS (
+			SELECT
+			VT.ROOM_ID,
+			VT.ROOM_HOSU,
+			VT.ROOM_NAME,
+			VT.ROOM_NUM,
+			VT.ROOMTIME_YN,
+			VT.TROOM_IMG,
+			VT.ROOM_IMG,
+			VT.ROOM_DETAIL,
+			VT.ROOM_YN,
+			T.TIME_CODE,
+			T.TIME_RANGE
+			FROM V_TIME VT
+		INNER JOIN TIME_RESERVATION T ON VT.TIME_CODE = T.TIME_CODE
+		)
+
+		SELECT
+			COUNT(*) AS RESERVATION_COUNT
+		FROM ROOM_RESERVATION RR
+		INNER JOIN V_ROOMTIME VRT ON RR.ROOM_ID = VRT.ROOM_ID
+		AND RR.TIME_CODE = VRT.TIME_CODE
+        WHERE RR.ROOM_ID =#{roomId} AND TRUNC(RR.RESER_DATE) = TRUNC(SYSDATE)
+	
+	
+	</select>
+
+
+	<select id="selectRoomList" resultMap="roomList">
+		SELECT A.*
+		FROM (SELECT
+			ROW_NUMBER() OVER (ORDER BY R.ROOM_HOSU) AS RNUM -- 날짜 기준으로 정렬
+			,R.ROOM_ID
+			,R.ROOM_HOSU
+			,R.ROOM_NAME
+			,R.ROOM_NUM
+			,R.ROOM_IMG
+			,R.ROOM_DETAIL
+			,R.ROOM_YN
+			,R.ROOM_GORY
+			,C.CODE
+			,C.CODE_COMMENT
+		FROM ROOM R INNER JOIN COMMON_CODE C ON R.ROOM_GORY = C.CODE
+		WHERE C.TABLE_NAME ='ROOM'
+		<include refid="searchFrag" />)A
+		<if test="paging neq null">
+		    <![CDATA[
+		       WHERE RNUM >= #{paging.startRow} AND RNUM <= #{paging.endRow}
+		    ]]>
+		</if>
+		
+		
+	</select>
+
+	<select id="selectRoom" resultType="RoomVO">
+		SELECT ROOM_ID
+		,ROOM_HOSU
+		,ROOM_NAME
+		,ROOM_NUM
+		,ROOM_IMG
+		,ROOM_DETAIL
+		,ROOM_YN
+		,ROOM_GORY
+		FROM ROOM
+		WHERE ROOM_ID = #{roomId}
+		
+	</select>
+
+	<insert id="insertRoom">
+		INSERT INTO ROOM(
+		ROOM_HOSU
+		,ROOM_NAME
+		,ROOM_NUM
+		,ROOM_IMG
+		,ROOM_DETAIL
+		,ROOM_YN
+		,ROOM_GORY
+		)
+		VALUES(
+		#{roomHosu,jdbcType=VARCHAR}
+		,#{roomName,jdbcType=VARCHAR}
+		,#{roomNum,jdbcType=NUMERIC}
+		,#{roomImg,jdbcType=BLOB}
+		,#{roomDetail,jdbcType=VARCHAR}
+		,'1'
+		,#{roomGory,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<update id="updateRoom">
+		UPDATE ROOM
+		SET
+		ROOM_HOSU=#{roomHosu,jdbcType=VARCHAR}
+		,ROOM_NAME=#{roomName,jdbcType=VARCHAR}
+		,ROOM_NUM=#{roomNum,jdbcType=NUMERIC}
+		,ROOM_IMG=#{roomImg,jdbcType=BLOB}
+		,ROOM_DETAIL=#{roomDetail,jdbcType=VARCHAR}
+		,ROOM_YN=#{roomYn,jdbcType=VARCHAR}
+		,ROOM_GORY=#{roomGory,jdbcType=VARCHAR}
+		WHERE ROOM_ID = #{roomId}
+
+
+	</update>
+
+	<delete id="deleteRoom">
+		DELETE FROM ROOM
+		WHERE ROOM_ID = #{roomId}
+	</delete>
+
+	<update id="deleteRoomImage">
+		UPDATE ROOM
+		SET ROOM_IMG=null
+		WHERE ROOM_ID=#{roomId}
+	</update>
+	
+	
+	
+
+
+</mapper>

@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+	version="3.1">
+	<display-name>Team02Final</display-name>
+
+	<welcome-file-list>
+		<welcome-file>a001/main</welcome-file> <!-- commons/controller/indexController -->
+	</welcome-file-list>
+
+	<!-- 기본 웰컴페이지 -->
+	<!-- <servlet-mapping> -->
+	<!-- <servlet-name>springDispatcherServlet</servlet-name> -->
+	<!-- <url-pattern>/</url-pattern> -->
+	<!-- <url-pattern>/index.do</url-pattern> -->
+	<!-- </servlet-mapping> -->
+
+	<!-- sneat 관련 -->
+
+
+
+
+
+	<!-- 상위 컨테이너를 형성하기 위한 빈 메타 데이터 등록 파일의 위치 설정 -->
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath:kr/or/ddit/spring/*.xml</param-value>
+	</context-param>
+
+	<!-- ServletContext 가 초기화 되는 시점에 발생하는 이벤트를 처리하는 핸들러(리스너) 등록 : root web application 
+		context 형성 -->
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+	<!-- request body 의 charset설정 -->
+	<filter>
+		<filter-name>CharacterEncodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>CharacterEncodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- <filter> -->
+	<!-- <filter-name>springSecurityFilterChain</filter-name> -->
+	<!-- <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class> -->
+	<!-- </filter> -->
+	<!-- <filter-mapping> -->
+	<!-- <filter-name>springSecurityFilterChain</filter-name> -->
+	<!-- <url-pattern>/*</url-pattern> -->
+	<!-- </filter-mapping> -->
+
+
+	<!-- PUT / DELETE 요청의 경우, WAS가 해당 요청을 파싱하지 않도록 설정되어 있음. -->
+	<!-- WAS를 대신하여 요청을 파싱하기 위한 필터 -->
+	<filter>
+		<filter-name>FormContentFilter</filter-name>
+		<filter-class>org.springframework.web.filter.FormContentFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>FormContentFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- _method 파라미터에 설정된 값으로 요청의 메소드를 변경하기 위한 Filter(wrapper request 로 변경함) -->
+	<!-- 20241209 민경주 추가 - DELETE메소드를 form태그로 실행시키기위해서 추가했습니다. -->
+	<filter>
+		<filter-name>HiddenHttpMethodFilter</filter-name>
+		<filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>HiddenHttpMethodFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- multipart request를 wrapper request로 변경. -->
+	<filter>
+		<filter-name>MultipartFilter</filter-name>
+		<filter-class>org.springframework.web.multipart.support.MultipartFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>MultipartFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+
+	<filter>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+		 <async-supported>true</async-supported>
+	</filter>
+	<filter-mapping>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+
+	<!-- Front Controller Pattern 에 따라 모든 요청(정적 자원 포함)에 대한 사전 처리를 담당함. -->
+	<!-- 하위 컨테이너를 생성하기 위한 설정 파일의 위치 정보를 파라미터로 전달함 -->
+	<servlet>
+		<servlet-name>springDispatcherServlet</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>/WEB-INF/springmvc/*.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+		 <async-supported>true</async-supported>
+		<multipart-config></multipart-config>
+	</servlet>
+
+	<!-- Map all requests to the DispatcherServlet for handling -->
+	<servlet-mapping>
+		<servlet-name>springDispatcherServlet</servlet-name>
+		<url-pattern>/</url-pattern>
+		<url-pattern>/a001/main</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>default</servlet-name>
+		<url-pattern>/assets/*</url-pattern>
+	</servlet-mapping>
+
+
+
+	<!-- 에러페이지 설정 -->
+	<error-page>
+		<error-code>404</error-code>
+		<location>/error404</location>
+	</error-page>
+
+	<error-page>
+		<error-code>500</error-code>
+		<location>/error500</location>
+	</error-page>
+
+	<error-page>
+		<error-code>400</error-code>
+		<location>/error400</location>
+	</error-page>
+
+	<error-page>
+		<error-code>403</error-code>
+		<location>/error403</location>
+	</error-page>
+
+	<error-page>
+		<error-code>405</error-code>
+		<location>/error405</location>
+	</error-page>
+
+	<error-page>
+		<error-code>415</error-code>
+		<location>/error415</location>
+	</error-page>
+	<!-- 에러페이지 설정 끝 -->
+
+	<security-constraint>
+		<web-resource-collection>
+			<web-resource-name>SSL Forward</web-resource-name>
+			<url-pattern>/*</url-pattern>
+		</web-resource-collection>
+		<user-data-constraint>
+			<transport-guarantee>CONFIDENTIAL</transport-guarantee>
+		</user-data-constraint>
+	</security-constraint> 
+
+	
+
+
+</web-app>

@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.attendance.dao.AttendanceHistoryMapper">
+	
+	<sql id="searchAH">
+    <where>	
+	<if	test="variousCondition.department != null and variousCondition.department != ''">
+		AND E.DEPART_CODE = #{variousCondition.department}
+	</if>
+	
+	<if	test="variousCondition.position != null and variousCondition.position != ''">
+		AND E.POSI_ID = #{variousCondition.position}
+	</if>
+	
+        <!-- 검색어 조건 -->
+     <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(variousCondition.searchWord)">
+	    AND (INSTR(E.EMP_NAME, #{variousCondition.searchWord}) > 0)
+	</if>
+
+		<if test="variousCondition.startDate != null and variousCondition.startDate != ''">
+    AND A.ATTHIS_ID IS NOT NULL
+    AND REGEXP_LIKE(TRIM(A.ATTHIS_ID), '^\d{8}$')
+    AND TO_DATE(TRIM(A.ATTHIS_ID), 'YYYYMMDD') >= TO_DATE(#{variousCondition.startDate}, 'YYYY-MM-DD')
+</if>
+
+<if test="variousCondition.endDate != null and variousCondition.endDate != ''">
+    <![CDATA[
+    AND A.ATTHIS_ID IS NOT NULL
+    AND REGEXP_LIKE(TRIM(A.ATTHIS_ID), '^\d{8}$')
+    
+    AND TO_DATE(TRIM(A.ATTHIS_ID), 'YYYYMMDD') <= TO_DATE(#{variousCondition.endDate}, 'YYYY-MM-DD')
+	]]>
+</if>
+
+
+
+    </where>
+</sql>
+	
+<sql id="searchAHDownload">
+    <where>	
+	<if	test="department != null and department != ''">
+		AND E.DEPART_CODE = #{department}
+	</if>
+	
+	<if	test="position != null and position != ''">
+		AND E.POSI_ID = #{position}
+	</if>
+	
+        <!-- 검색어 조건 -->
+     <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(searchWord)">
+	    AND (INSTR(E.EMP_NAME, #{searchWord}) > 0)
+	</if>
+
+		<if test="startDate != null and startDate != ''">
+    AND A.ATTHIS_ID IS NOT NULL
+    AND REGEXP_LIKE(TRIM(A.ATTHIS_ID), '^\d{8}$')
+    AND TO_DATE(TRIM(A.ATTHIS_ID), 'YYYYMMDD') >= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+</if>
+
+<if test="endDate != null and endDate != ''">
+    <![CDATA[
+    AND A.ATTHIS_ID IS NOT NULL
+    AND REGEXP_LIKE(TRIM(A.ATTHIS_ID), '^\d{8}$')
+    
+    AND TO_DATE(TRIM(A.ATTHIS_ID), 'YYYYMMDD') <= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+	]]>
+</if>
+
+
+
+    </where>
+</sql>	
+	
+	
+	
+	
+	
+<resultMap type="AttendanceHistoryVO" id="attendanceVO" autoMapping="true"> 
+	<association property="emp" autoMapping="true"></association>
+	<association property="attendTb" autoMapping="true"></association>
+</resultMap>
+
+<select id="selectHrTotalRecord" resultType="int">
+		SELECT COUNT(*) 
+  		  FROM ATTENDANCE_HISTORY A
+    	  INNER JOIN EMPLOYEE E ON A.EMP_ID = E.EMP_ID
+		 
+		<include refid="searchAH" />
+</select>
+
+
+<select id="selectAllAttendanceHistoryList" resultMap="attendanceVO">
+SELECT BB.*
+  FROM(
+	SELECT ROWNUM RNUM, AA.*
+	  FROM (
+		SELECT 
+		    A.ATTHIS_ID
+		  , E.EMP_ID 
+		  , E.EMP_NAME
+		  , (SELECT C.CODE_COMMENT
+		       FROM COMMON_CODE C 
+		      WHERE 1=1 
+		        AND C.TABLE_NAME='EMPLOYEE'
+		        AND C.CODE_TYPE='직급'
+		        AND C.CODE = E.POSI_ID) AS POSI_NAME 
+		    , (SELECT D.DEPART_NAME
+		         FROM DEPARTMENT D 
+		        WHERE 1=1 
+		          AND E.DEPART_CODE = D.DEPART_CODE) AS DEPART_NAME
+		    , TO_CHAR(A.HAHIS_TIME, 'HH24:MI:SS') AS HAHIS_TIME 
+            , TO_CHAR(A.HLEAVE_TIME, 'HH24:MI:SS') AS HLEAVE_TIME 
+		    , A.ATTHIS_OVER
+		    , A.ATTHIS_CAUSE
+		    , A.ATTHIS_OVER_YN 
+		    , (SELECT C.CODE_COMMENT
+		         FROM COMMON_CODE C
+		        WHERE 1=1 
+		          AND C.TABLE_NAME='ATTENDANCE_HISTORY'
+		          AND C.CODE_TYPE='출근상태'
+		          AND C.CODE = A.ATTSTA_ID_IN) AS ATTSTA_ID_IN
+		    , (SELECT C.CODE_COMMENT
+		         FROM COMMON_CODE C 
+		        WHERE 1=1
+		          AND C.TABLE_NAME='ATTENDANCE_HISTORY'
+		          AND C.CODE_TYPE = '퇴근상태'
+		          AND C.CODE = A.ATTSTA_ID_OUT) AS ATTSTA_ID_OUT
+		    , EARLYLEAVE_CAUSE
+		  FROM ATTENDANCE_HISTORY A INNER JOIN EMPLOYEE E ON A.EMP_ID = E.EMP_ID
+		    <include refid="searchAH"></include>
+		  ORDER BY A.ATTHIS_ID DESC
+  ) AA
+) BB
+<![CDATA[
+        WHERE RNUM >= #{startRow} AND RNUM <= #{endRow}
+    ]]>
+	</select>
+	
+	<!-- 페이징 처리없는 조회 (옵션에 대한 근태 엑셀 다운로드) -->
+	<select id="selectDownloadAttendaceExcel" resultMap="attendanceVO">
+		SELECT 
+		    A.ATTHIS_ID
+		  , E.EMP_ID 
+		  , E.EMP_NAME
+		  , (SELECT C.CODE_COMMENT
+		       FROM COMMON_CODE C 
+		      WHERE 1=1 
+		        AND C.TABLE_NAME='EMPLOYEE'
+		        AND C.CODE_TYPE='직급'
+		        AND C.CODE = E.POSI_ID) AS POSI_NAME 
+		    , (SELECT D.DEPART_NAME
+		         FROM DEPARTMENT D 
+		        WHERE 1=1 
+		          AND E.DEPART_CODE = D.DEPART_CODE) AS DEPART_NAME
+		    , SUBSTR(TO_CHAR(A.HAHIS_TIME, 'YYYY-MM-DD HH24:MI:SS.FF3'), 1, 19) AS HAHIS_TIME
+		    , SUBSTR(TO_CHAR(A.HLEAVE_TIME, 'YYYY-MM-DD HH24:MI:SS.FF3'), 1, 19) AS HLEAVE_TIME 
+		    , A.ATTHIS_OVER
+		    , A.ATTHIS_CAUSE
+		    , A.ATTHIS_OVER_YN 
+		    , (SELECT C.CODE_COMMENT
+		         FROM COMMON_CODE C
+		        WHERE 1=1 
+		          AND C.TABLE_NAME='ATTENDANCE_HISTORY'
+		          AND C.CODE_TYPE='출근상태'
+		          AND C.CODE = A.ATTSTA_ID_IN) AS ATTSTA_ID_IN
+		    , (SELECT C.CODE_COMMENT
+		         FROM COMMON_CODE C 
+		        WHERE 1=1
+		          AND C.TABLE_NAME='ATTENDANCE_HISTORY'
+		          AND C.CODE_TYPE = '퇴근상태'
+		          AND C.CODE = A.ATTSTA_ID_OUT) AS ATTSTA_ID_OUT
+		    , EARLYLEAVE_CAUSE
+		  FROM ATTENDANCE_HISTORY A INNER JOIN EMPLOYEE E ON A.EMP_ID = E.EMP_ID
+		    <include refid="searchAHDownload"></include>
+		  ORDER BY A.ATTHIS_ID DESC
+		
+	</select>
+	
+	<select id="selectEmpName" parameterType="String" resultType="EmployeeVO">
+		SELECT 
+			EMP_ID
+		  , EMP_NAME
+		  FROM EMPLOYEE
+		 WHERE EMP_NAME = #{searchWord}
+	</select>
+	
+	
+	
+	<select id="selectAttendTime" resultType="AttendTbVO">
+	SELECT 
+     	AT.ATTEND_ID
+     , (SELECT SUBSTR(C.CODE_COMMENT,0,5) 
+     	  FROM COMMON_CODE C
+         WHERE 1=1
+	       AND C.TABLE_NAME = 'ATTEND_TB'
+	       AND C.CODE_TYPE = '출근시간설정'
+	       AND TO_NUMBER(C.CODE) = AT.ATTEND_TIME) AS ATTEND_TIME
+     , (SELECT SUBSTR(C.CODE_COMMENT,0,5) 
+     	  FROM COMMON_CODE C
+     	 WHERE 1=1
+	       AND C.TABLE_NAME = 'ATTEND_TB'
+	       AND C.CODE_TYPE = '퇴근시간설정'
+	       AND TO_NUMBER(C.CODE) = AT.LEAVE_TIME) AS LEAVE_TIME
+	 FROM ATTEND_TB AT
+
+		
+	</select>
+	
+	<select id="selectAllAttendTimeList" resultType="CommonCodeVO">
+	
+		SELECT
+		   TABLE_NAME
+		 , CODE
+		 , CODE_TYPE
+		 , SUBSTR(CODE_COMMENT,0,5) AS CODE_COMMENT
+ 
+		  FROM COMMON_CODE
+ 		 WHERE 1=1
+		   AND TABLE_NAME='ATTEND_TB'
+		   AND CODE_TYPE ='출근시간설정'
+		 ORDER BY TO_NUMBER(CODE) ASC   
+	</select>
+	
+	
+	<select id="selectAllLeaveTimeList" resultType="CommonCodeVO">
+	
+		SELECT
+		   TABLE_NAME
+		 , CODE
+		 , CODE_TYPE
+		 , SUBSTR(CODE_COMMENT,0,5) AS CODE_COMMENT
+ 
+		  FROM COMMON_CODE
+ 		 WHERE 1=1
+		   AND TABLE_NAME='ATTEND_TB'
+		   AND CODE_TYPE ='퇴근시간설정'
+		 ORDER BY TO_NUMBER(CODE) ASC
+	</select>
+	
+	<update id="updateAttendTime">
+		UPDATE ATTEND_TB
+		   SET
+    	     ATTEND_TIME = #{attendTime}
+           , LEAVE_TIME =#{leaveTime}
+         WHERE ATTEND_ID =#{attendId}
+	</update>
+	
+	<sql id="">
+		
+	</sql>
+	
+	
+	<!-- 미니프로필에서 띄울 출근시간 조회 -->
+	<select id="selectMyHahisTime" resultMap="attendanceVO">
+		SELECT 
+		   ATTHIS_ID
+		 , EMP_ID
+		 , SUBSTR(HAHIS_TIME,1,17) AS HAHIS_TIME
+ 		  FROM ATTENDANCE_HISTORY
+ 		 WHERE 1=1 
+   		   AND EMP_ID= #{empId}
+  		   AND TO_DATE(ATTHIS_ID,'YYYYMMDD') = TRUNC(SYSDATE)
+	</select>
+	
+	<!-- 미니프로필에서 띄울 퇴근시간 조회  -->
+	<select id="selectMyHleaveTime" resultMap="attendanceVO">
+		SELECT 
+		   ATTHIS_ID
+		 , EMP_ID
+		 , SUBSTR(HLEAVE_TIME,1,17) AS HLEAVE_TIME
+ 		  FROM ATTENDANCE_HISTORY
+ 		 WHERE 1=1 
+   		   AND EMP_ID= #{empId}
+  		   AND TO_DATE(ATTHIS_ID,'YYYYMMDD') = TRUNC(SYSDATE)
+	</select>
+	
+	<insert id="insertMyHahisTime">
+		INSERT INTO ATTENDANCE_HISTORY
+		(
+			ATTHIS_ID
+		  , EMP_ID
+		  , HAHIS_TIME
+		  , HLEAVE_TIME
+		  , ATTHIS_CAUSE
+		  , ATTHIS_OVER
+		  , ATTHIS_OVER_YN
+		  , ATTSTA_ID_IN
+		  , ATTEND_ID
+		  , ATTSTA_ID_OUT
+		  , EARLYLEAVE_CAUSE
+		)
+		VALUES(
+			  TO_CHAR(SYSDATE,'YYYYMMDD')  <!-- ID값 YYYYMMDD 형태  -->
+			, #{empId,jdbcType=VARCHAR}	
+        	, CURRENT_TIMESTAMP  <!-- 출근시간 -->
+			, NULL  <!-- 퇴근시간 초기 NULL -->
+			, CASE
+            	WHEN CURRENT_TIMESTAMP > TO_DATE(TO_CHAR(SYSDATE, 'YYYY-MM-DD') || #{attendTime}, 'YYYY-MM-DD HH24:MI:SS')
+				THEN #{atthisCause} <!-- 지각 or 결근 사유 -->
+				ELSE NULL 
+			  END
+			, 0      <!-- 연장근무 시간 초기값 0  -->
+			, 'N' 	 <!-- 연장근무 여부 초기값 N  -->
+			, CASE
+            	WHEN CURRENT_TIMESTAMP > TO_DATE(TO_CHAR(SYSDATE, 'YYYY-MM-DD') || #{attendTime}, 'YYYY-MM-DD HH24:MI:SS')
+            	THEN '2' <!-- 지각 상태코드 -->
+            	ELSE '1' <!-- 출근 상태코드  -->
+              END
+			, 'DEFAULT_01' <!-- 출퇴근 시간 코드 (FK) : 일단은 하나로 두는 정책이므로 FK 데이터값 자체를 넣음. -->
+			, NULL <!-- 퇴근 상태코드 초기 NULL -->
+			, NULL <!-- 조퇴사유 NULL  -->
+		)
+	</insert>
+		
+	<update id="insertMyHleaveTime">
+	
+UPDATE ATTENDANCE_HISTORY
+    SET
+     HLEAVE_TIME = TO_TIMESTAMP_TZ(#{hleaveTime}, 'YYYY-MM-DD"T"HH24:MI:SS.FF3TZH:TZM')
+   , ATTHIS_OVER_YN = #{atthisOverYn}  
+   , ATTHIS_OVER = #{atthisOver}       
+   , ATTSTA_ID_OUT = #{attstaIdOut}
+   , EARLYLEAVE_CAUSE = #{earlyLeaveCause}     
+    WHERE EMP_ID = #{empId}
+      AND ATTHIS_ID = TO_CHAR(SYSDATE, 'YYYYMMDD') <!-- 당일 근태 데이터만 업데이트 -->
+		
+	
+	
+	</update>
+	
+	<select id="selectOneAttendDetail" resultMap="attendanceVO" >
+		SELECT 
+		    A.ATTHIS_ID
+		  , E.EMP_ID 
+		  , E.EMP_NAME
+		  , (SELECT C.CODE_COMMENT
+		       FROM COMMON_CODE C 
+		      WHERE 1=1 
+		        AND C.TABLE_NAME='EMPLOYEE'
+		        AND C.CODE_TYPE='직급'
+		        AND C.CODE = E.POSI_ID) AS POSI_NAME 
+		    , (SELECT D.DEPART_NAME
+		         FROM DEPARTMENT D 
+		        WHERE 1=1 
+		          AND E.DEPART_CODE = D.DEPART_CODE) AS DEPART_NAME
+		    , TO_CHAR(A.HAHIS_TIME, 'HH24:MI:SS') AS HAHIS_TIME 
+            , TO_CHAR(A.HLEAVE_TIME, 'HH24:MI:SS') AS HLEAVE_TIME 
+		    , A.ATTHIS_OVER
+		    , A.ATTHIS_CAUSE
+		    , A.ATTHIS_OVER_YN 
+		    , (SELECT C.CODE_COMMENT
+		         FROM COMMON_CODE C
+		        WHERE 1=1 
+		          AND C.TABLE_NAME='ATTENDANCE_HISTORY'
+		          AND C.CODE_TYPE='출근상태'
+		          AND C.CODE = A.ATTSTA_ID_IN) AS ATTSTA_ID_IN
+		    , (SELECT C.CODE_COMMENT
+		         FROM COMMON_CODE C 
+		        WHERE 1=1
+		          AND C.TABLE_NAME='ATTENDANCE_HISTORY'
+		          AND C.CODE_TYPE = '퇴근상태'
+		          AND C.CODE = A.ATTSTA_ID_OUT) AS ATTSTA_ID_OUT
+		    , EARLYLEAVE_CAUSE
+		  FROM ATTENDANCE_HISTORY A INNER JOIN EMPLOYEE E ON A.EMP_ID = E.EMP_ID
+          WHERE 1=1
+            AND E.EMP_ID = #{empId}
+            AND A.ATTHIS_ID = #{atthisId}
+		
+	</select>
+	
+	<select id="selectAttendStatus" resultType="CommonCodeVO">
+		SELECT 
+		    TABLE_NAME
+		  , CODE
+		  , CODE_TYPE
+		  , CODE_COMMENT
+		  FROM COMMON_CODE
+		 WHERE CODE_TYPE ='출근상태'
+	
+	</select>
+	
+	<select id="selectLeaveStatus" resultType="CommonCodeVO">
+		SELECT 
+		    TABLE_NAME
+		  , CODE
+		  , CODE_TYPE
+		  , CODE_COMMENT
+		  FROM COMMON_CODE
+		 WHERE CODE_TYPE ='퇴근상태'
+	
+	</select>
+	
+	<update id="updateAttendLeaveStatus">
+		
+		UPDATE ATTENDANCE_HISTORY
+		   SET 
+		    ATTSTA_ID_IN = #{attstaIdIn}
+		  , ATTSTA_ID_OUT = #{attstaIdOut}
+          ,	ATTHIS_OVER_YN = CASE 
+                            WHEN #{attstaIdOut} = 9 THEN ATTHIS_OVER_YN
+                            ELSE 'N'
+                         END
+		 WHERE 1=1
+		   AND EMP_ID = #{empId}
+		   AND ATTHIS_ID = #{atthisId}
+	
+	</update>
+	
+</mapper>

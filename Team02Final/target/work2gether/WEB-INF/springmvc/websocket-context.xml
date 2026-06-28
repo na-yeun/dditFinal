@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xsi:schemaLocation="http://www.springframework.org/schema/websocket http://www.springframework.org/schema/websocket/spring-websocket-4.3.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd">
+
+	<bean id="messageHandler" class="kr.or.ddit.commons.websocket.MessageHandler" />
+	<bean id="httpSessionHandshakeInterceptor" class="org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor" />
+	<bean id="loginHandshakeInterceptor" class="kr.or.ddit.commons.websocket.LoginHandshakeInterceptor"/>
+	
+	
+	<websocket:handlers allowed-origin-patterns="*">
+		<websocket:mapping handler="messageHandler" path="/ws/echo/**"/>
+		<websocket:handshake-interceptors>
+			<ref bean="httpSessionHandshakeInterceptor"/>
+		</websocket:handshake-interceptors>
+	</websocket:handlers>
+	
+	<websocket:handlers allowed-origin-patterns="*">
+		<websocket:mapping handler="messageHandler" path="/sockjs/echo/{var1}/{var2}"/>
+		<websocket:handshake-interceptors>
+			<ref bean="httpSessionHandshakeInterceptor"/>
+		</websocket:handshake-interceptors>
+		<websocket:sockjs />
+	</websocket:handlers>
+
+<!-- <bean id="customHandshakeHandler" class="kr.or.ddit.commons.websocket.CustomHandshakeHandler" />
+
+<websocket:message-broker application-destination-prefix="/app" user-destination-prefix="/user">
+    <websocket:stomp-endpoint path="/stomp">
+        <websocket:handshake-interceptors>
+            <ref bean="httpSessionHandshakeInterceptor" />
+            <ref bean="loginHandshakeInterceptor" />
+        </websocket:handshake-interceptors>
+     
+        <websocket:sockjs />
+    </websocket:stomp-endpoint>
+    <websocket:simple-broker prefix="/topic,/queue" />
+</websocket:message-broker>
+
+ -->
+</beans>

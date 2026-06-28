@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.approval.dao.ApprovalDocumentMapper">
+
+    <sql id="searchFrag">
+        <if test="paging.simpleCondition neq null">
+            <if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+                <choose>
+                    <when test="paging.simpleCondition.searchType eq 'title'">
+                        AND INSTR(AD.DOC_TITLE, #{paging.simpleCondition.searchWord}) > 0
+                    </when>
+                    <when test="paging.simpleCondition.searchType eq 'docId'">
+                        AND INSTR(AD.DOC_ID, #{paging.simpleCondition.searchWord}) > 0
+                    </when>
+                    <when test="paging.simpleCondition.searchType eq 'writer'">
+                        AND INSTR((SELECT EMP_NAME
+                        FROM EMPLOYEE
+                        WHERE EMP_ID = AD.EMP_ID), #{paging.simpleCondition.searchWord}) > 0
+                    </when>
+                    <otherwise>
+                        AND (INSTR(AD.DOC_TITLE, #{paging.simpleCondition.searchWord}) > 0
+                        OR INSTR(AD.DOC_ID, #{paging.simpleCondition.searchWord}) > 0
+                        OR INSTR((SELECT EMP_NAME
+                        FROM EMPLOYEE
+                        WHERE EMP_ID = AD.EMP_ID), #{paging.simpleCondition.searchWord}) > 0)
+                    </otherwise>
+                </choose>
+            </if>
+        </if>
+    </sql>
+
+
+<!--    실시간 알림보내기위해 최종승인시 기안자의 id로보내야해서 그 정보를 갖고오는것-->
+    <select id="selectEmpIdByDocumentId" resultType="String">
+        SELECT EMP_ID
+        FROM APPROVAL_DOCUMENT AD
+        WHERE AD.DOC_ID = #{docId}
+    </select>
+
+
+    <!-- 기안 문서 -->
+    <select id="selectDraftCount" resultType="int">
+        SELECT COUNT(*)
+        FROM APPROVAL_DOCUMENT AD
+        WHERE AD.EMP_ID = #{empId}
+        <include refid="searchFrag"/>
+    </select>
+
+    <select id="selectDraftList" resultType="ApprovalDocumentVO">
+        SELECT B.*
+        FROM (
+            SELECT ROWNUM RNUM, A.*
+            FROM (
+                    SELECT
+                     AD.DOC_ID
+                    ,AD.DOC_TITLE
+                    ,AD.DOC_STATUS
+                    ,AD.CREATED_DATE
+                    ,AD.EMP_ID
+                    ,(SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = AD.EMP_ID) AS EMP_NAME
+                    ,(
+                        SELECT CC.CODE_COMMENT
+                        FROM COMMON_CODE CC
+                        WHERE CC.TABLE_NAME = 'APPROVAL_DOCUMENT'
+                        AND CC.CODE = AD.DOC_STATUS
+                     ) AS DOC_STATUS_NAME
+                FROM APPROVAL_DOCUMENT AD
+                WHERE AD.EMP_ID = #{empId}
+                <include refid="searchFrag"/>
+                ORDER BY AD.CREATED_DATE DESC
+            ) A
+        ) B
+        WHERE RNUM BETWEEN #{paging.startRow} AND #{paging.endRow}
+    </select>
+
+    <!-- 결재할 문서 -->
+    <select id="selectToBeApprovedCount" resultType="int">
+        SELECT COUNT(*)
+        FROM APPROVAL_DOCUMENT AD
+        JOIN APPROVAL A ON AD.DOC_ID = A.DOC_ID
+        WHERE A.EMP_ID = #{empId}
+        AND A.APPROVAL_STATUS IN ('1', '2')
+        <include refid="searchFrag"/>
+    </select>
+
+    <!-- 결재할 문서 목록 -->
+    <select id="selectToBeApprovedList" resultType="ApprovalDocumentVO">
+        SELECT B.*
+        FROM (
+            SELECT ROWNUM RNUM, A.*
+            FROM (
+                SELECT
+                    AD.DOC_ID
+                    ,AD.DOC_TITLE
+                    ,AD.DOC_STATUS
+                    ,AD.CREATED_DATE
+                    ,AD.EMP_ID
+                    -- 기안자 이름
+                    ,(SELECT EMP_NAME
+                    FROM EMPLOYEE
+                    WHERE EMP_ID = AD.EMP_ID
+                    ) AS EMP_NAME
+
+                    -- 문서상태 코드의 실제 명칭
+                    ,CASE A.APPROVAL_STATUS
+                        WHEN '1' THEN (
+                            SELECT CC.CODE_COMMENT
+                            FROM COMMON_CODE CC
+                            WHERE CC.TABLE_NAME = 'APPROVAL'
+                                AND CC.CODE = '1'
+                    )
+                    WHEN '2' THEN (
+                            SELECT CC.CODE_COMMENT
+                            FROM COMMON_CODE CC
+                            WHERE CC.TABLE_NAME = 'APPROVAL'
+                                AND CC.CODE = '2'
+                    )
+                    ELSE (
+                            SELECT CC.CODE_COMMENT
+                            FROM COMMON_CODE CC
+                            WHERE CC.TABLE_NAME = 'APPROVAL_DOCUMENT'
+                                AND CC.CODE = AD.DOC_STATUS
+                    )
+                    END AS DOC_STATUS_NAME
+
+                FROM APPROVAL_DOCUMENT AD
+                JOIN APPROVAL A
+                    ON AD.DOC_ID = A.DOC_ID
+
+                WHERE A.EMP_ID = #{empId}         -- 현재 로그인한 사용자의 결재 문서
+                    AND (
+                        -- [1] 내가 결재해야 할 차례인지 (APPROVAL_NUM이 현재 가장 낮은 미결재 차수와 동일한지)
+                        A.APPROVAL_NUM = (
+                            SELECT MIN(APPROVAL_NUM)
+                            FROM APPROVAL
+                            WHERE DOC_ID = A.DOC_ID
+                                AND APPROVAL_STATUS IN ('1', '2')
+                    )
+
+                    -- [2] 이전 차수 결재자 중에서 반려(4)나 전결(3,Y) 이력이 없어야 함
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM APPROVAL PREV
+                        WHERE PREV.DOC_ID = A.DOC_ID
+                        AND PREV.APPROVAL_NUM &lt; A.APPROVAL_NUM
+                                            AND (
+                                                PREV.APPROVAL_STATUS = '4'
+                                                OR (PREV.APPROVAL_STATUS = '3' AND PREV.APPROVAL_YN = 'Y')
+                                                )
+                        )
+                    )
+            -- 만약 검색 조건을 적용한다면 (searchFrag 사용 중이라면)
+            <include refid="searchFrag"/>
+            ORDER BY AD.CREATED_DATE DESC
+            ) A
+        ) B
+        WHERE RNUM BETWEEN #{paging.startRow} AND #{paging.endRow}
+    </select>
+
+    <!--   SELECT 1 은 실제로 “1”이라는 값을 가져오겠다는 것보다는,-->
+<!--   “해당 조건을 만족하는 레코드가 존재하는지”를 확인하기 위해 사용하는 관용적인 표현.-->
+<!--   조건에 맞는 레코드가 있느냐/없느냐”만 판단하면 되기 때문에 SELECT 1을 사용-->
+<!--   &lt 는 less than이고 부등호 대신쓰는거임 xml에선 못쓰니까-->
+<!--   EXISTS (서브쿼리)는 서브쿼리 내에 한 행이라도 존재하면 True를,-->
+<!--    하나도 존재하지 않으면 False를 반환하는 연산자(조건문)-->
+
+    <!-- 진행중인 문서 -->
+    <select id="selectInProgressCount" resultType="int">
+        SELECT COUNT(*)
+        FROM APPROVAL_DOCUMENT AD
+        JOIN APPROVAL A ON AD.DOC_ID = A.DOC_ID
+        WHERE A.EMP_ID = #{empId}
+        AND A.APPROVAL_STATUS IN ('3', '4', '6')
+        <include refid="searchFrag"/>
+    </select>
+
+    <select id="selectInProgressList" resultType="ApprovalDocumentVO">
+        SELECT B.*
+        FROM (
+            SELECT ROWNUM RNUM, A.*
+            FROM (
+                SELECT
+                 AD.DOC_ID
+                ,AD.DOC_TITLE
+                ,AD.DOC_STATUS
+                ,AD.CREATED_DATE
+                ,AD.EMP_ID
+                ,(SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = AD.EMP_ID) AS EMP_NAME
+                ,(
+                    SELECT CC.CODE_COMMENT
+                    FROM COMMON_CODE CC
+                    WHERE CC.TABLE_NAME = 'APPROVAL_DOCUMENT'
+                    AND CC.CODE = AD.DOC_STATUS
+                ) AS DOC_STATUS_NAME
+                FROM APPROVAL_DOCUMENT AD
+                JOIN APPROVAL A ON AD.DOC_ID = A.DOC_ID
+                WHERE A.EMP_ID = #{empId}
+                AND A.APPROVAL_STATUS IN ('3', '4', '6')
+                <include refid="searchFrag"/>
+                ORDER BY AD.CREATED_DATE DESC
+            ) A
+        ) B
+        WHERE RNUM BETWEEN #{paging.startRow} AND #{paging.endRow}
+    </select>
+
+    <!-- 참조 문서 -->
+    <select id="selectReferenceCount" resultType="int">
+        SELECT COUNT(*)
+        FROM REFERENCE_EMPLOYEE RE
+        JOIN DOC_REFERENCE DR ON RE.REF_ID = DR.REF_ID
+        JOIN APPROVAL_DOCUMENT AD ON DR.DOC_ID = AD.DOC_ID
+        WHERE RE.EMP_ID = #{empId}
+        AND AD.DOC_STATUS = '5'
+        <include refid="searchFrag"/>
+    </select>
+
+    <select id="selectReferenceList" resultType="ApprovalDocumentVO">
+        SELECT B.*
+        FROM (
+            SELECT ROWNUM RNUM, A.*
+            FROM (
+                SELECT DISTINCT
+                 AD.DOC_ID
+                ,AD.DOC_TITLE
+                ,AD.DOC_STATUS
+                ,AD.CREATED_DATE
+                ,AD.EMP_ID
+                ,(SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = AD.EMP_ID) AS EMP_NAME
+                ,(
+                        SELECT CC.CODE_COMMENT
+                        FROM COMMON_CODE CC
+                        WHERE CC.TABLE_NAME = 'APPROVAL_DOCUMENT'
+                        AND CC.CODE = AD.DOC_STATUS
+                ) AS DOC_STATUS_NAME
+                FROM REFERENCE_EMPLOYEE RE
+                JOIN DOC_REFERENCE DR ON RE.REF_ID = DR.REF_ID
+                JOIN APPROVAL_DOCUMENT AD ON DR.DOC_ID = AD.DOC_ID
+                WHERE RE.EMP_ID = #{empId}
+                AND AD.DOC_STATUS = '5'
+                <include refid="searchFrag"/>
+                ORDER BY AD.CREATED_DATE DESC
+            ) A
+        ) B
+        WHERE RNUM BETWEEN #{paging.startRow} AND #{paging.endRow}
+    </select>
+
+
+    <!-- 다음 문서 시퀀스 조회 -->
+    <select id="getNextDocSeq" parameterType="string" resultType="int">
+        SELECT NVL(
+                       (
+                           SELECT MAX(TO_NUMBER(SUBSTR(DOC_ID, -4))) + 1
+                           FROM APPROVAL_DOCUMENT
+                           WHERE DOC_ID LIKE #{prefix} || '%'
+                       ),
+                       1
+               ) as next_seq
+        FROM DUAL
+    </select>
+
+    <!-- 문서 저장 -->
+    <insert id="insertApprovalDocument" parameterType="ApprovalDocumentVO">
+        INSERT INTO APPROVAL_DOCUMENT (
+             DOC_ID
+            ,DOC_TITLE
+            ,DOC_CONTENT
+            ,DOC_PRESERVE
+            ,DOC_STATUS
+            ,ALLOW_DELEGATION
+            ,EMP_ID
+            ,APPRLINE_ID
+            ,APPRFORM_ID
+            ,ATCH_FILE_ID
+        ) VALUES (
+                      #{docId}
+                     ,#{docTitle}
+                     ,#{docContent}
+                     ,#{docPreserve}
+                     ,#{docStatus}
+                     ,#{allowDelegation}
+                     ,#{empId}
+                     ,#{apprlineId}
+                     ,#{apprformId}
+                     ,#{atchFileId}
+                 )
+    </insert>
+
+
+    <resultMap id="documentDetailMap" type="kr.or.ddit.approval.vo.ApprovalDocumentVO">
+        <!-- 기본 컬럼 매핑 -->
+        <id property="docId" column="DOC_ID"/>
+        <result property="docTitle" column="DOC_TITLE"/>
+        <result property="docContent" column="DOC_CONTENT"/>
+        <result property="docPreserve" column="DOC_PRESERVE"/>
+        <result property="docStatus" column="DOC_STATUS"/>
+        <result property="allowDelegation" column="ALLOW_DELEGATION"/>
+        <result property="empId" column="EMP_ID"/>
+        <result property="apprlineId" column="APPRLINE_ID"/>
+        <result property="apprformId" column="APPRFORM_ID"/>
+        <result property="createdDate" column="CREATED_DATE"/>
+        <result property="atchFileId" column="ATCH_FILE_ID"/>
+
+        <!-- 테이블에 없는 추가 컬럼 매핑 -->
+        <result property="rnum" column="RNUM"/>
+        <result property="empName" column="EMP_NAME"/>
+        <result property="docStatusName" column="DOC_STATUS_NAME"/>
+        <result property="approverFinalYn" column="APPROVER_FINAL_YN"/>
+
+        <!-- 첨부파일 연관관계 매핑 -->
+        <association property="atchFile"
+                     javaType="kr.or.ddit.atch.vo.AtchFileVO"
+                     select="kr.or.ddit.atch.dao.AtchFileMapper.selectAtchFileEnable"
+                     column="ATCH_FILE_ID"/>
+
+        <!-- 결재선 정보 리스트 연관관계 매핑 -->
+        <collection property="approvalList"
+                    ofType="kr.or.ddit.approval.vo.ApprovalVO"
+                    select="kr.or.ddit.approval.dao.ApprovalMapper.selectApprovalList"
+                    column="DOC_ID"/>
+    </resultMap>
+
+<!--    문서 상세조회-->
+    <select id="selectDocumentDetail" resultMap="documentDetailMap">
+        SELECT
+             AD.DOC_ID
+            ,AD.DOC_TITLE
+            ,AD.DOC_CONTENT
+            ,AD.DOC_STATUS
+            ,AD.DOC_PRESERVE
+            ,AD.CREATED_DATE
+            ,AD.EMP_ID
+            ,AD.ALLOW_DELEGATION
+            ,(SELECT EMP_NAME FROM EMPLOYEE WHERE EMP_ID = AD.EMP_ID) AS EMP_NAME
+            ,(
+                SELECT CC.CODE_COMMENT
+                FROM COMMON_CODE CC
+                WHERE CC.TABLE_NAME = 'APPROVAL_DOCUMENT'
+                  AND CC.CODE = AD.DOC_STATUS
+             ) AS DOC_STATUS_NAME
+            ,ATCH_FILE_ID
+        FROM APPROVAL_DOCUMENT AD
+        WHERE AD.DOC_ID = #{docId}
+    </select>
+
+    <update id="updateDocumentStatus">
+        UPDATE APPROVAL_DOCUMENT
+        SET DOC_STATUS = #{status}
+        WHERE DOC_ID = #{docId}
+    </update>
+
+    <!--    승인이나 반려 전결을했을때 상태코드와 내용(도장이미지)를 업데이트하기-->
+    <update id="updateDocumentContent">
+        UPDATE APPROVAL_DOCUMENT
+        SET
+            DOC_CONTENT = #{document.docContent},
+            DOC_STATUS = #{document.docStatus}
+        WHERE DOC_ID = #{docId}
+    </update>
+
+<!-- 문서 삭제 -->
+    <delete id="deleteDocument" parameterType="string">
+        DELETE FROM APPROVAL_DOCUMENT
+        WHERE DOC_ID = #{docId}
+    </delete>
+</mapper>

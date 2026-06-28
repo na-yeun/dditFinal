@@ -1,0 +1,35 @@
+@charset "UTF-8";
+
+#filterSection {
+    display: flex;
+    justify-content: flex-end; /* 오른쪽 끝으로 정렬 */
+    align-items: center; /* 수직 가운데 정렬 */
+    gap: 20px; /* 각 옵션 간 간격 */
+    padding: 10px;
+    border-bottom: 1px solid #ddd; /* 아래쪽 경계선 */
+    background-color: #f9f9f9; /* 배경 색상 */
+}
+
+/* 각 옵션 박스(라벨 + 셀렉트) */
+.filter-item {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* 라벨과 셀렉트 간 간격 */
+}
+
+/* 라벨 스타일 */
+.form-label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* 셀렉트 박스 스타일 */
+.form-select {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    width: 150px; /* 셀렉트 박스 크기를 늘림 */
+}
+

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.roomTime.dao.RoomTimeMapper">
+
+
+<resultMap type="RoomTimeVO" id="roomTimeMap" autoMapping="true">
+    <!-- RoomTimeVO의 필드 매핑 -->
+    <result property="troomImg" column="TROOM_IMAGE" javaType="byte[]" />
+    
+    <!-- room 필드 매핑 -->
+    <association property="room" javaType="RoomVO" autoMapping="true">
+        <result property="roomImg" column="ROOM_IMAGE" javaType="byte[]" />
+    </association>
+
+    <!-- timeReser 필드 매핑 -->
+    <association property="timeReser" javaType="TimeReservationVO" autoMapping="true" />
+</resultMap>
+
+<select id="selectRoomTimeList" resultMap="roomTimeMap">
+WITH V_TIME AS (
+    SELECT 
+        RT.ROOM_ID, 
+        RT.TIME_CODE, 
+        RT.ROOMTIME_YN,  
+        RT.TROOM_IMG,
+        R.ROOM_HOSU,
+        R.ROOM_NAME,
+        R.ROOM_NUM,
+        R.ROOM_IMG,
+        R.ROOM_DETAIL,
+        R.ROOM_YN
+    FROM ROOM_TIME RT 
+    INNER JOIN ROOM R ON RT.ROOM_ID = R.ROOM_ID
+)
+SELECT 
+    VT.ROOM_ID,
+    VT.ROOM_HOSU,
+    VT.ROOM_NAME,
+    VT.ROOM_NUM,
+    VT.ROOMTIME_YN,
+    VT.TROOM_IMG,
+     VT.ROOM_IMG,
+    VT.ROOM_DETAIL,
+    VT.ROOM_YN,
+    T.TIME_CODE,
+    T.TIME_RANGE
+FROM V_TIME VT 
+INNER JOIN TIME_RESERVATION T ON VT.TIME_CODE = T.TIME_CODE
+</select>
+
+
+<select id="selectRoomTime" resultMap="roomTimeMap">
+
+WITH V_TIME AS (
+    SELECT 
+        RT.ROOM_ID, 
+        RT.TIME_CODE, 
+        RT.ROOMTIME_YN,  
+        RT.TROOM_IMG,
+        R.ROOM_HOSU,
+        R.ROOM_NAME,
+        R.ROOM_NUM,
+        R.ROOM_IMG,
+        R.ROOM_DETAIL,
+        R.ROOM_YN
+    FROM ROOM_TIME RT 
+    INNER JOIN ROOM R ON RT.ROOM_ID = R.ROOM_ID
+)
+SELECT 
+    VT.ROOM_ID,
+    VT.ROOM_HOSU,
+    VT.ROOM_NAME,
+    VT.ROOM_NUM,
+    VT.ROOMTIME_YN,
+    VT.TROOM_IMG,
+    VT.ROOM_IMG,
+    VT.ROOM_DETAIL,
+    VT.ROOM_YN,
+    T.TIME_CODE,
+    T.TIME_RANGE
+FROM V_TIME VT 
+INNER JOIN TIME_RESERVATION T ON VT.TIME_CODE = T.TIME_CODE
+WHERE VT.ROOM_ID = #{roomId} 
+
+</select>
+
+
+<update id="updateRoomTimeYn" >
+    UPDATE ROOM_TIME RT
+   SET RT.ROOMTIME_YN = 'Y'
+   WHERE RT.ROOMTIME_YN = 'N'
+     AND NOT EXISTS (
+         SELECT 1
+         FROM ROOM_RESERVATION RR
+         WHERE RR.ROOM_ID = RT.ROOM_ID
+           AND TRUNC(RR.RESER_DATE) = TRUNC(SYSDATE)
+     )
+
+</update>
+
+	<update id="updateRoomReser">
+		UPDATE ROOM_TIME
+		SET ROOMTIME_YN = 'N'
+		WHERE ROOM_ID = #{roomId, jdbcType=VARCHAR}
+		AND TIME_CODE = #{timeCode, jdbcType=VARCHAR}
+		AND ROOMTIME_YN = 'Y'
+
+	</update>
+
+
+
+
+</mapper>

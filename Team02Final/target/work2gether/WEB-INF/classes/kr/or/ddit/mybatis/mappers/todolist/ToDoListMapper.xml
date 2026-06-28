@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.todolist.dao.ToDoListMapper">
+	<insert id="insertToDoList" parameterType="ToDoListVO">
+		<selectKey keyProperty="todoNo" resultType="string" order="BEFORE">
+			SELECT 
+			    CASE 
+			        WHEN MAX(SUBSTR(TODO_NO, 9, 3)) IS NOT NULL THEN 
+			            TO_CHAR(SYSDATE, 'YYYYMMDD') || 
+			            LPAD(TO_NUMBER(MAX(SUBSTR(TODO_NO, 9, 3))) + 1, 3, '0')
+			        ELSE 
+			            TO_CHAR(SYSDATE, 'YYYYMMDD') || '001'
+			    END AS NEXT_TODO_NO
+			FROM TODOLIST
+			WHERE SUBSTR(TODO_NO, 1, 8) = TO_CHAR(SYSDATE, 'YYYYMMDD')
+		</selectKey>
+		INSERT INTO TODOLIST(TODO_NO, TODO_CONTENT, TODO_PRIORITY, TODO_STATUS, EMP_ID, TODO_DATE, TODO_INDEX)
+		VALUES(
+			#{todoNo,jdbcType=VARCHAR}
+			, #{todoContent,jdbcType=VARCHAR}
+			, #{todoPriority}
+			, 'N'
+			, #{empId,jdbcType=VARCHAR}
+			, TO_CHAR(SYSDATE,'YYYYMMDD')
+			, (SELECT CASE 
+                           WHEN COUNT(*) = 0 THEN 1
+                           ELSE MAX(TODO_INDEX) + 1
+                       END AS NEW_INDEX
+                FROM TODOLIST
+                WHERE EMP_ID = #{empId} AND TODO_DATE = TO_CHAR(SYSDATE, 'YYYYMMDD'))
+		)
+	</insert>
+	
+	<update id="updateToDoList">
+		UPDATE TODOLIST
+		SET
+			<trim prefixOverrides=",">
+				<if test="todoContent neq null and todoContent.length gt 0">
+					, TODO_CONTENT=#{todoContent,jdbcType=VARCHAR}
+				</if>
+				<if test="todoPriority neq null">
+					, TODO_PRIORITY=#{todoPriority,jdbcType=NUMERIC}
+				</if>
+				<if test="todoStatus neq null and todoStatus.length gt 0">
+					, TODO_STATUS=#{todoStatus,jdbcType=CHAR}
+				</if>
+				<if test="todoIndex neq null">
+					, TODO_INDEX=#{todoIndex,jdbcType=NUMERIC}
+				</if>
+			</trim>
+		WHERE TODO_NO=#{todoNo}
+
+	</update>
+	
+	<delete id="deleteToDoList">
+		DELETE TODOLIST
+		WHERE TODO_NO=#{todoNo}
+	</delete>
+	
+	<select id="selectToDoListList" resultType="ToDoListVO">
+		SELECT
+			TODO_NO
+			, TODO_CONTENT
+			, TODO_PRIORITY
+			, TODO_STATUS
+			, EMP_ID
+			, TODO_DATE
+			, TODO_INDEX
+		FROM TODOLIST
+        WHERE EMP_ID=#{empId} AND TODO_DATE=TO_CHAR(SYSDATE,'YYYYMMDD')
+		ORDER BY TODO_PRIORITY DESC, TODO_INDEX
+	</select>
+</mapper>

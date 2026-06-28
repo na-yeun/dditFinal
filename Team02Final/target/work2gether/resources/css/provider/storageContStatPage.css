@@ -1,0 +1,105 @@
+@charset "UTF-8";
+
+
+/* 기본적으로 collapse는 숨김 */
+.collapse {
+    display: none;
+    transition: all 0.3s ease-in-out;
+}
+
+.collapse.show {
+    display: flex; /* ✅ 플렉스 박스로 수정 */
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px;
+    border-top: 1px solid #ddd;
+}
+
+#storageTable {
+    width: 300px; /* 테이블 폭을 늘림 */
+    margin: 0 auto; /* 가운데 정렬 */
+    border-collapse: collapse;
+}
+
+#storageTable th, #storageTable td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+/* 전체 컨테이너 레이아웃 */
+#chartContainer {
+    display: flex;
+    justify-content: space-between; /* 양쪽으로 분리 */
+    align-items: flex-start;
+    padding: 20px;
+    gap: 20px;
+}
+
+/* 파이 차트 스타일 */
+#storageChart {
+    flex: 1;  /* 차트가 왼쪽에 크게 위치 */
+    max-width: 60%;
+    height: auto;
+}
+
+#statsTablesContainer {
+    flex: 1;
+    max-width: 50%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+
+/* 차트와 테이블을 좌우 배치 */
+#statsChartContainer {
+    flex: 1;
+    max-width: 50%;
+}
+.stats-table {
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+    background: #f9f9f9;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.stats-table h4 {
+    text-align: center;
+    font-size: 18px;
+}
+
+.stats-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stats-table th, .stats-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+}
+
+.stats-table th {
+    background-color: #f1f1f1;
+    font-weight: bold;
+}
+
+
+#storageSize {
+    margin-top: 280px;       /* 위쪽 여백 추가 */
+    display: flex;
+    justify-content: center;  /* 수평 가운데 정렬 */
+    align-items: center;      /* 수직 가운데 정렬 */
+    flex-direction: column;   /* 세로 방향 정렬 */
+}
+
+#storageTable {
+    width: 450px;  /* 테이블 크기 */
+    border-collapse: collapse;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+

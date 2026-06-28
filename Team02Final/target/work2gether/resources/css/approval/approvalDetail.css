@@ -1,0 +1,21 @@
+.approval-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+}
+
+.approval-step {
+    padding: 0.5rem;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+
+.approval-step .order {
+    min-width: 45px;
+    text-align: center;
+}
+
+.approval-step .name {
+    min-width: 80px;
+}

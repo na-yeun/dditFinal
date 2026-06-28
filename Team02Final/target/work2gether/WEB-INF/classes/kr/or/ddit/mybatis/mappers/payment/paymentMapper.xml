@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.payment.dao.PaymentMapper">
+	
+	<resultMap type="PaymentVO" id="paymentMap" autoMapping="true">
+		<association property="contract" autoMapping="true"></association>
+	</resultMap>
+	
+	<select id="selectTotalCount" resultType="int">
+		SELECT COUNT(P.PAY_ID)
+		  FROM PAYMENT P INNER JOIN CONTRACT C ON P.CONTRACT_ID = C.CONTRACT_ID 
+		 WHERE 1=1
+		   AND P.PAY_STATUS = 'Y'
+		   AND C.CONTRACT_ID = #{variousCondition.companyId}
+		   
+		
+	</select>
+	
+	
+	<select id="selectMyCompanyPayHistory" resultMap="paymentMap">
+	SELECT B.*
+      FROM (
+        SELECT ROWNUM RNUM, A.*
+          FROM (
+			SELECT 
+				 P.PAY_ID 
+			   , P.PAY_AMOUNT
+			   , P.PAY_DATE
+			   , P.PAY_METHOD
+			   , C.CONTRACT_ID
+			   , C.CONTRACT_START
+			   , C.CONTRACT_END
+			  FROM PAYMENT P INNER JOIN CONTRACT C 
+			  						 ON P.CONTRACT_ID = C.CONTRACT_ID
+			 WHERE 1=1
+			   AND P.PAY_STATUS = 'Y'
+			   AND C.CONTRACT_ID = #{variousCondition.companyId}
+			 ORDER BY P.PAY_DATE DESC
+		 ) A    
+    ) B
+    <![CDATA[
+        WHERE RNUM >= #{startRow} AND RNUM <= #{endRow}
+    ]]>
+	</select>
+	
+	<resultMap type="ContractVO" id="contractMap">
+		<result property="contractId" column="CONTRACT_ID"/>
+	    <result property="contractStart" column="CONTRACT_START"/>
+	    <result property="contractEnd" column="CONTRACT_END"/>
+		<association property="scale" javaType="ScaleVO" autoMapping="true"/>
+		<association property="empCount" javaType="EmpCountVO" autoMapping="true"/>
+		<association property="storage" javaType="StorageVO" autoMapping="true"/>
+		<association property="fSetting" javaType="FirstSettingVO" autoMapping="true"/>
+		<collection property="paymentList" ofType="PaymentVO" autoMapping="true"></collection>
+	</resultMap>
+	
+	<select id="selectMyCompanyPayDetail" resultMap="contractMap">
+		SELECT 
+		    C.CONTRACT_ID
+		  , C.CONTRACT_START
+		  , C.CONTRACT_END
+		  , P.PAY_ID
+		  , P.PAY_AMOUNT
+		  , P.PAY_METHOD
+		  , P.PAY_DATE
+		  , EP.EMP_COUNT_ID
+		  , EP.EMP_COUNT
+		  , ST.STORAGE_ID
+		  , ST.STORAGE_SIZE
+		  , SC.SCALE_ID
+		  , SC.SCALE_SIZE
+		  , F.FIRST_POSITION
+		  , F.FIRST_DEPART
+		  , F.FIRST_EMPLOY
+		  , F.FIRST_ATTEND
+		  , F.FIRST_ELEC
+		  
+		  FROM CONTRACT C INNER JOIN SCALE SC ON C.SCALE_ID = SC.SCALE_ID
+		                  INNER JOIN EMP_COUNT EP ON C.EMP_COUNT_ID = EP.EMP_COUNT_ID
+		                  INNER JOIN STORAGE ST ON C.STORAGE_ID = ST.STORAGE_ID
+		                  INNER JOIN FIRST_SETTING F ON C.CONTRACT_ID = F.CONTRACT_ID
+		                  INNER JOIN PAYMENT P ON C.CONTRACT_ID = P.CONTRACT_ID
+		 WHERE 1=1
+		   AND C.CONTRACT_ID = #{companyId}
+		 
+		 ORDER BY CONTRACT_START DESC                
+	</select>
+		 
+	
+	
+	
+	
+
+</mapper>

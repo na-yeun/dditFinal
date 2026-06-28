@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.cloud.dao.CloudStorageMapper">
+
+	<select id="selectCloud" resultType="kr.or.ddit.cloud.vo.CloudVO">
+		SELECT B.EMP_ID,
+			   B.PER_CLOUD_PATH,
+			   B.PUB_CLOUD_PATH,
+		       D.CONTRACT_BUCKET,
+		       E.PROV_ACCESSKEY,
+		       E.PROV_SECRETKEY
+		FROM EMPLOYEE A
+		LEFT JOIN CLOUD B ON(A.EMP_ID = B.EMP_ID)
+		LEFT JOIN DEPARTMENT C ON(A.DEPART_CODE = C.DEPART_CODE)
+		LEFT JOIN CONTRACT D ON(C.CONTRACT_ID = D.CONTRACT_ID)
+		LEFT JOIN PROVIDER E ON(D.PROV_ID = E.PROV_ID)
+		WHERE A.EMP_ID = #{empId}
+	</select>
+	
+</mapper>

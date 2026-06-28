@@ -1,0 +1,259 @@
+
+/* 시설정보 제목 */
+.facility-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: left;
+    margin-right: 10px; /* 시설정보 제목만 왼쪽으로 이동 */
+    display: flex;
+    align-items: center; /* 수직 정렬 */
+}
+
+/* 선택정보 제목 */
+.selection-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: left;
+     margin-left: 18px; 
+    display: flex;
+    align-items: center; /* 수직 정렬 */
+}
+
+
+/* 아이콘과 텍스트 간격 */
+.icon {
+    margin-right: 5px; /* 아이콘과 텍스트 사이 간격 */
+}
+
+/* 전체 레이아웃 */
+.main-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin: 20px auto;
+    max-width: 1200px;
+    padding: 20px;
+}
+
+/* 시설 정보 섹션 */
+.facility-section {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 시설 이미지 */
+.facility-image-wrapper {
+    width: 400px; /* 이미지 너비 증가 */
+    height: 400px; /* 이미지 높이 증가 */
+    flex-shrink: 0;
+    
+}
+
+.facility-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 비율 유지 */
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    margin-top: 18%;
+}
+
+/* 시설 정보 테이블 */
+
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px; /* 글자 크기 증가 */
+    color: #333;
+    table-layout: fixed; /* 고정된 열 너비 */
+}
+
+.styled-table th {
+    background-color: #f9f9f9;
+    text-align: center; /* 가운데 정렬 */
+    vertical-align: middle; /* 수직 가운데 정렬 */
+    font-weight: bold;
+    padding: 15px; /* 내부 여백 증가 */
+    border: 1px solid #ddd;
+    width: 15%; /* 동일한 열 너비 */
+}
+
+.styled-table td {
+    padding: 15px; /* 내부 여백 증가 */
+    border: 1px solid #ddd;
+    text-align: left; /* 데이터 셀은 왼쪽 정렬 유지 */
+}
+
+/* 전체 섹션 */
+.facility-info {
+    flex: 1;
+    padding: 20px;
+}
+
+/* 선택 정보 섹션 */
+.room-reservation {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+   
+}
+/* 버튼 오른쪽 정렬 */
+.right-align {
+    margin-left: auto;
+}
+/* 버튼 스타일 */
+.btn-primary {
+   background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px; /* 버튼 내부 여백 축소 */
+    font-size: 14px; /* 글자 크기 축소 */
+    width: 100px; /* 버튼 너비 */
+    height: 45px; /* 버튼 높이 */
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+.form-select {
+    width: 100%; /* 셀렉트 박스 너비 */
+    padding: 10px; /* 내부 여백 */
+    font-size: 16px; /* 글자 크기 */
+    border-radius: 5px; /* 둥근 모서리 */
+    border: 1px solid #ddd; /* 테두리 */
+}
+
+/* 선택정보 테이블 */
+.room-reservation .styled-table {
+    width: 80%; /* 너비 조정 (기본값: 100%) */
+    margin: 0 auto; /* 가운데 정렬 */
+    font-size: 14px; /* 글자 크기 조정 */
+    border-collapse: collapse;
+}
+
+.room-reservation .styled-table th,
+.room-reservation .styled-table td {
+    padding: 10px; /* 셀 내부 여백 */
+    border: 1px solid #ddd; /* 테두리 */
+    text-align: left; /* 기본 왼쪽 정렬 */
+}
+
+.room-reservation .styled-table th{
+	
+ text-align: center; /* 가운데 정렬 */
+}
+/* 선택된 시간 범위 스타일 */
+.selected-time-wrapper {
+     display: inline-flex;
+    align-items: center;
+    justify-content: space-between; /* 텍스트와 X 버튼을 양쪽 끝으로 배치 */
+    margin: 8px 1px 8px 20px; /* 위, 오른쪽, 아래는 기존 값, 왼쪽만 20px로 늘림 */
+    padding: 8px 15px; /* 충분한 내부 여백 */
+    border-radius: 20px; /* 둥근 테두리 */
+    background-color: rgba(173, 216, 230, 0.3); /* 투명도 있는 하늘색 */
+    font-size: 14px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 약간의 그림자 */
+    width: fit-content; /* 콘텐츠 크기에 맞게 요소 너비 자동 조정 */
+}
+
+/* 시간 텍스트 스타일 */
+.time-text {
+    margin-right: 1px; /* 텍스트와 X 버튼 간격 */
+    color: #333; /* 기본 글자 색 */
+}
+
+/* x 버튼 스타일 */
+.remove-time-button {
+    border: none;
+    background: none;
+    color: red;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    margin-left: auto; /* X 버튼을 오른쪽으로 밀기 */
+}
+
+.selected-option {
+    background-color: rgba(173, 216, 230, 0.5); /* 투명도 있는 하늘색 */
+}
+/* SweetAlert 팝업 커스텀 스타일 */
+.custom-swal-popup {
+    z-index: 2055 !important; /* Bootstrap 기본 모달보다 살짝 높게 설정 */
+}
+
+/* SweetAlert의 백드롭 (검은 배경) */
+.swal2-container {
+    z-index: 2060 !important; /* SweetAlert 백드롭이 팝업보다 낮지만 모달보다 높게 설정 */
+}
+
+/* Bootstrap 모달 */
+#basicModal {
+    z-index: 2000 !important; /* Bootstrap 기본값 유지 */
+}
+#delBtn{
+	height: 37px;
+	width: 100px;
+	
+}
+#reTab{
+	margin-bottom: 40px;
+	width: 70%;
+	align-items: center
+}
+#reservationTable {
+    margin: 0 auto; /* 수평 가운데 정렬 */
+    text-align: center; /* 테이블 내부 텍스트 가운데 정렬 */
+    width: 80%; /* 테이블 너비를 적절히 조정 */
+    border: 0px solid #ddd; /* 테이블 테두리 */
+    padding: 16px; /* 내부 여백 */
+   
+    border-radius: 8px; /* 둥근 테두리 */
+    background-color: #fff; /* 배경색 */
+}
+
+table#reTab {
+    width: 100%; /* 테이블 너비를 부모 요소에 맞춤 */
+    border-collapse: collapse; /* 테이블 경계 겹침 방지 */
+    margin: 16px 0; /* 테이블 위아래 간격 */
+}
+
+table#reTab th, table#reTab td {
+    border: 1px solid #ddd; /* 셀 테두리 */
+    padding: 12px; /* 셀 내부 여백 */
+    text-align: center; /* 텍스트 가운데 정렬 */
+    vertical-align: middle; /* 수직 가운데 정렬 */
+}
+
+table#reTab th {
+    background-color: #f5f5f5; /* 헤더 배경색 */
+    font-weight: bold; /* 헤더 글씨 굵게 */
+}
+
+
+button#delBtn {
+    padding: 6px 12px;
+    border: none;
+    background-color: #dc3545; /* 삭제 버튼 기본 색상 */
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+button#delBtn:hover {
+    background-color: #c82333; /* 삭제 버튼 호버 색상 */
+}
+#btnClass{
+	margin-bottom: 10px;
+	margin-left: auto;
+}

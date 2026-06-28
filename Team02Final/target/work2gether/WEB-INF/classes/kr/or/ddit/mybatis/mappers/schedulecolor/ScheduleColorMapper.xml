@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.schedule.dao.ScheduleColorMapper">
+	
+	<select id="selectColorList" resultType="kr.or.ddit.schedule.vo.ScheduleColorVO">
+		SELECT 
+			 SCHECOLOR_NO
+			,SCHETYPE_ID
+			,EMP_ID
+			,SCHE_ID
+			,SCHE_BCOLOR
+			,SCHE_FCOLOR
+		FROM SCHEDULE_COLOR
+	</select>
+	
+	<select id="selectColorOne" resultType="kr.or.ddit.schedule.vo.ScheduleColorVO">
+		SELECT 
+			 SCHECOLOR_NO
+			,SCHETYPE_ID
+			,EMP_ID
+			,SCHE_ID
+			,SCHE_BCOLOR
+			,SCHE_FCOLOR
+		FROM SCHEDULE_COLOR
+		WHERE SCHETYPE_ID =#{schetypeId}
+		
+	</select>
+	
+	<insert id="insertColor">
+		
+		<selectKey keyProperty="schecolorNo" resultType="String"
+			order="BEFORE">
+			SELECT TO_CHAR(SCHECOLOR_NO.NEXTVAL) AS SCHECOLOR_NO FROM DUAL
+		</selectKey>
+		
+		INSERT INTO SCHEDULE_COLOR(
+			 SCHECOLOR_NO
+			,SCHETYPE_ID
+			,EMP_ID
+			,SCHE_ID
+			,SCHE_BCOLOR
+			,SCHE_FCOLOR
+		)VALUES(
+			 #{schecolorNo,jdbcType=VARCHAR}
+			, #{schetypeId,jdbcType=VARCHAR}
+			, #{empId,jdbcType=VARCHAR}
+			, #{scheId,jdbcType=VARCHAR}
+			, #{scheBcolor,jdbcType=VARCHAR}
+			, #{scheFcolor,jdbcType=VARCHAR}
+			
+		)
+	</insert>
+	
+	<update id="updateColor">
+		UPDATE SCHEDULE_COLOR
+		SET  
+			SCHE_BCOLOR = #{scheBcolor,jdbcType=VARCHAR}
+			,SCHE_FCOLOR=#{scheFcolor,jdbcType=VARCHAR}
+		 WHERE 1=1
+	    <if test='schetypeId eq "2" or schetypeId eq "1"'>
+	        AND SCHETYPE_ID = #{schetypeId}
+	       
+	    </if>
+	    <if test='schetypeId eq "3"'>
+	        AND SCHE_ID = #{scheId}
+	        AND EMP_ID = #{empId}
+	       <!--  AND SCHECOLOR_NO =#{schecolorNo} -->
+	    </if>
+	</update>
+	
+	<delete id="deleteColor">
+		DELETE FROM SCHEDULE_COLOR
+		WHERE SCHE_ID = #{scheId}
+		
+	</delete>
+	
+	
+	
+	
+</mapper>

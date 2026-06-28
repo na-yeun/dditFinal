@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.expense.dao.ExpenseMapper">
+
+    <!-- 지출 구분 코드 조회 -->
+    <select id="selectExpenseTypeList" resultType="map">
+        SELECT CODE         AS expTypeCode
+             , CODE_COMMENT AS expTypeName
+        FROM COMMON_CODE
+        WHERE TABLE_NAME = 'EXPENSE_HISTORY'
+          AND CODE_TYPE = '지출 구분'
+        ORDER BY CODE
+    </select>
+
+    <!-- 지출 분류 코드 조회 -->
+    <select id="selectExpenseCategoryList" resultType="map">
+        SELECT CODE         AS expCategoriesCode
+             , CODE_COMMENT AS expCategoriesName
+        FROM COMMON_CODE
+        WHERE TABLE_NAME = 'EXPENSE_HISTORY'
+          AND CODE_TYPE = '지출 분류'
+        ORDER BY CODE
+    </select>
+
+    <!-- 그룹 ID 시퀀스 조회 -->
+    <select id="getNextGroupSeq" resultType="int">
+        SELECT NVL(MAX(TO_NUMBER(SUBSTR(GROUP_ID, 9))), 0) + 1
+        FROM EXPENSE_GROUP
+        WHERE GROUP_ID LIKE 'EG-' || #{yearMonth} || '-%'
+    </select>
+
+    <!-- 그룹 정보 저장 -->
+    <insert id="insertExpenseGroup" parameterType="ExpenseGroupVO">
+        INSERT INTO EXPENSE_GROUP ( GROUP_ID
+                                  , DOC_ID
+                                  , EMP_ID
+                                  , EXPENSE_NAME
+                                  , TOTAL_AMOUNT
+                                  , EXPENSE_TYPE
+                                  , GROUP_STATUS
+                                  , DEPART_CODE)
+        VALUES ( #{groupId}
+               , #{docId}
+               , #{empId}
+               , #{expenseName}
+               , #{totalAmount}
+               , #{expenseType}
+               , #{groupStatus}
+               , #{departCode})
+    </insert>
+
+    <!-- 지출 내역 저장 -->
+    <insert id="insertExpenseHistory" parameterType="ExpenseHistoryVO">
+        INSERT INTO EXPENSE_HISTORY ( EXPENSE_ITEM_ID
+                                    , GROUP_ID
+                                    , EXPENSE_DATE
+                                    , EXPENSE_DETAIL
+                                    , EXPENSE_CATEGORIES
+                                    , PAYMENT_METHOD
+                                    , QUANTITY
+                                    , UNIT_PRICE
+                                    , EXPENSE_AMOUNT)
+        VALUES ( #{expenseItemId}
+               , #{groupId}
+               , #{expenseDate}
+               , #{expenseDetail}
+               , #{expenseCategories}
+               , #{paymentMethod}
+               , #{quantity}
+               , #{unitPrice}
+               , #{expenseAmount})
+    </insert>
+
+    <update id="updateExpenseStatus" parameterType="map">
+        UPDATE EXPENSE_GROUP
+        SET GROUP_STATUS = 'Y'
+        WHERE DOC_ID = #{docId}
+    </update>
+
+    <delete id="deleteExpenseStatus" parameterType="map">
+        DELETE
+        FROM EXPENSE_GROUP
+        WHERE DOC_ID = #{docId}
+    </delete>
+
+    <!-- 검색조건 프래그먼트 수정: EMP_ID 관련 조건 제거 -->
+    <sql id="searchFrag">
+        <if test="year != null and year != ''">
+            AND EXTRACT(YEAR FROM eh.EXPENSE_DATE) = #{year}
+        </if>
+        <if test="month != null and month != ''">
+            AND EXTRACT(MONTH FROM eh.EXPENSE_DATE) = #{month}
+        </if>
+        <if test="departCode != null and departCode != ''">
+            -- 직원 테이블 조인 없이 직접 부서코드 비교
+            AND eg.DEPART_CODE = #{departCode}
+        </if>
+    </sql>
+
+    <!-- 월별 비교 통계 -->
+    <select id="selectMonthlyComparison" resultType="map">
+        WITH CURRENT_MONTH AS (
+            SELECT SUM(eh.EXPENSE_AMOUNT) AS TOTAL_AMOUNT
+            FROM EXPENSE_HISTORY eh
+                     JOIN EXPENSE_GROUP eg ON eh.GROUP_ID = eg.GROUP_ID
+                     JOIN APPROVAL_DOCUMENT ad ON eg.DOC_ID = ad.DOC_ID
+            WHERE ad.DOC_STATUS = '5'
+              AND EXTRACT(YEAR FROM eh.EXPENSE_DATE) = #{year}
+              AND EXTRACT(MONTH FROM eh.EXPENSE_DATE) = #{month}
+        ),
+             PREV_MONTH AS (
+                 SELECT SUM(eh.EXPENSE_AMOUNT) AS TOTAL_AMOUNT
+                 FROM EXPENSE_HISTORY eh
+                          JOIN EXPENSE_GROUP eg ON eh.GROUP_ID = eg.GROUP_ID
+                          JOIN APPROVAL_DOCUMENT ad ON eg.DOC_ID = ad.DOC_ID
+                 WHERE ad.DOC_STATUS = '5'
+                   AND (
+                     (EXTRACT(YEAR FROM eh.EXPENSE_DATE) = #{year} AND
+                      EXTRACT(MONTH FROM eh.EXPENSE_DATE) = #{month} - 1)
+                         OR
+                     (EXTRACT(YEAR FROM eh.EXPENSE_DATE) = #{year} - 1 AND
+                      #{month} = 1 AND EXTRACT(MONTH FROM eh.EXPENSE_DATE) = 12)
+                     )
+             )
+        SELECT
+            NVL(c.TOTAL_AMOUNT, 0) AS CURRENT_AMOUNT,
+            NVL(p.TOTAL_AMOUNT, 0) AS PREV_AMOUNT,
+            CASE
+                WHEN NVL(p.TOTAL_AMOUNT, 0) = 0 THEN 0
+                ELSE ROUND(((NVL(c.TOTAL_AMOUNT, 0) - NVL(p.TOTAL_AMOUNT, 0))
+                    / NVL(p.TOTAL_AMOUNT, 0)) * 100, 2)
+                END AS GROWTH_RATE
+        FROM CURRENT_MONTH c
+                 CROSS JOIN PREV_MONTH p
+    </select>
+
+    <!-- 부서별 통계 : Employee, Department 테이블 조인 제거하고 DEPART_CODE 직접 사용 -->
+    <select id="selectDepartmentStats" resultType="map">
+        SELECT
+        -- 부서정보는 DEPARTMENT 테이블에서 직접 조회
+            d.DEPART_NAME,
+            SUM(eh.EXPENSE_AMOUNT) AS TOTAL_AMOUNT
+        FROM EXPENSE_HISTORY eh
+        JOIN EXPENSE_GROUP eg ON eh.GROUP_ID = eg.GROUP_ID
+            -- 승인된 문서만 조회
+        JOIN APPROVAL_DOCUMENT ad ON eg.DOC_ID = ad.DOC_ID
+            -- 부서정보는 저장된 DEPART_CODE로 조회
+        JOIN DEPARTMENT d ON eg.DEPART_CODE = d.DEPART_CODE
+        WHERE ad.DOC_STATUS = '5'
+        <include refid="searchFrag"/>
+        GROUP BY d.DEPART_NAME
+        ORDER BY TOTAL_AMOUNT DESC
+    </select>
+
+    <select id="selectDetailCategoryStats" resultType="map">
+        SELECT
+            cc.CODE_COMMENT AS CATEGORY_NAME,
+            SUM(eh.EXPENSE_AMOUNT) AS AMOUNT,
+            COUNT(*) AS COUNT,
+            ROUND(RATIO_TO_REPORT(SUM(eh.EXPENSE_AMOUNT)) OVER() * 100, 2) AS RATIO
+        FROM EXPENSE_HISTORY eh
+        JOIN EXPENSE_GROUP eg ON eh.GROUP_ID = eg.GROUP_ID
+        JOIN COMMON_CODE cc ON eh.EXPENSE_CATEGORIES = cc.CODE
+        JOIN APPROVAL_DOCUMENT ad ON eg.DOC_ID = ad.DOC_ID
+        JOIN DEPARTMENT d ON eg.DEPART_CODE = d.DEPART_CODE
+        WHERE ad.DOC_STATUS = '5'
+        AND EXTRACT(YEAR FROM eh.EXPENSE_DATE) = #{year}
+        <if test="month != null">
+            AND EXTRACT(MONTH FROM eh.EXPENSE_DATE) = #{month}
+        </if>
+        <if test="departName != null">
+            -- EMPLOYEE 테이블 조인 없이 부서명으로 직접 조회
+            AND d.DEPART_NAME = #{departName}
+        </if>
+        GROUP BY cc.CODE_COMMENT
+        ORDER BY AMOUNT DESC
+    </select>
+
+    <!-- 통계 분석 -->
+    <select id="selectAnalysisStats" resultType="map">
+        <choose>
+            <when test="viewType == 'department'">
+                WITH DEPT_STATS AS (
+                    SELECT
+                        d.DEPART_NAME,
+                            <choose>
+                                <when test="type == 'year'">
+                                    EXTRACT(YEAR FROM eh.EXPENSE_DATE) AS PERIOD
+                                </when>
+                                <otherwise>
+                                    EXTRACT(MONTH FROM eh.EXPENSE_DATE) AS PERIOD
+                                </otherwise>
+                            </choose>,
+                            SUM(eh.EXPENSE_AMOUNT) AS AMOUNT
+                        FROM EXPENSE_HISTORY eh
+                        JOIN EXPENSE_GROUP eg ON eh.GROUP_ID = eg.GROUP_ID
+                        -- 직원 테이블 조인 제거하고 부서 테이블만 조인
+                        JOIN DEPARTMENT d ON eg.DEPART_CODE = d.DEPART_CODE
+                        JOIN APPROVAL_DOCUMENT ad ON eg.DOC_ID = ad.DOC_ID
+                        WHERE ad.DOC_STATUS = '5'
+                        <if test="year != null and year != ''">
+                            AND EXTRACT(YEAR FROM eh.EXPENSE_DATE) = #{year}
+                        </if>
+                        GROUP BY d.DEPART_NAME,
+                        <choose>
+                            <when test="type == 'year'">
+                                EXTRACT(YEAR FROM eh.EXPENSE_DATE)
+                            </when>
+                            <otherwise>
+                                EXTRACT(MONTH FROM eh.EXPENSE_DATE)
+                            </otherwise>
+                        </choose>
+                        )
+                        SELECT
+                            DEPART_NAME,
+                            PERIOD as <choose><when test="type == 'year'">YEAR</when><otherwise>MONTH</otherwise></choose>,
+                            AMOUNT
+                        FROM DEPT_STATS
+                        ORDER BY PERIOD, DEPART_NAME  -- 기간, 부서명 순으로 정렬하도록 수정
+            </when>
+            <otherwise>
+                SELECT
+                    <choose>
+                        <when test="type == 'year'">
+                            EXTRACT(YEAR FROM eh.EXPENSE_DATE) AS YEAR
+                        </when>
+                        <otherwise>
+                            EXTRACT(MONTH FROM eh.EXPENSE_DATE) AS MONTH
+                        </otherwise>
+                    </choose>,
+                    SUM(eh.EXPENSE_AMOUNT) AS AMOUNT
+                FROM EXPENSE_HISTORY eh
+                JOIN EXPENSE_GROUP eg ON eh.GROUP_ID = eg.GROUP_ID
+                JOIN APPROVAL_DOCUMENT ad ON eg.DOC_ID = ad.DOC_ID
+                WHERE ad.DOC_STATUS = '5'
+                <if test="year != null and year != ''">
+                    AND EXTRACT(YEAR FROM eh.EXPENSE_DATE) = #{year}
+                </if>
+                GROUP BY
+                <choose>
+                    <when test="type == 'year'">
+                        EXTRACT(YEAR FROM eh.EXPENSE_DATE)
+                    </when>
+                    <otherwise>
+                        EXTRACT(MONTH FROM eh.EXPENSE_DATE)
+                    </otherwise>
+                </choose>
+                ORDER BY
+                <choose>
+                    <when test="type == 'year'">YEAR</when>
+                    <otherwise>LPAD(MONTH, 2, '0')</otherwise>
+                </choose>
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 부서/분류 코드 조회 -->
+    <select id="selectDepartmentList" resultType="map">
+        SELECT
+            DEPART_CODE,
+            DEPART_NAME
+        FROM DEPARTMENT
+        WHERE DEPART_STATUS = 'Y'
+        ORDER BY DEPART_NAME
+    </select>
+
+    <select id="selectExpenseCategories" resultType="CommonCodeVO">
+        SELECT
+            CODE,
+            CODE_COMMENT
+        FROM COMMON_CODE
+        WHERE TABLE_NAME = 'EXPENSE_HISTORY'
+        ORDER BY CODE
+    </select>
+</mapper>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.statistics.dao.StatisticsMapper">
+	<select id="selectEmpByDepartmentStatisticsResult" resultType="StatisticsVO">
+		-- 전체 인원의 부서별 인원
+		SELECT 
+		    E.DEPART_CODE AS STATISTICS_CODE,
+		    D.DEPART_NAME AS STATISTICS_NAME,
+		    (SELECT COUNT(*) FROM EMPLOYEE WHERE DEPART_CODE = E.DEPART_CODE) AS STATISTICS_COUNT
+		FROM EMPLOYEE E
+		INNER JOIN DEPARTMENT D ON E.DEPART_CODE = D.DEPART_CODE
+		GROUP BY E.DEPART_CODE, D.DEPART_NAME
+		
+		UNION ALL
+		
+		SELECT 
+		    'TOTAL' AS STATISTICS_CODE,
+		    '전체' AS STATISTICS_NAME,
+		    COUNT(*) AS STATISTICS_COUNT
+		FROM EMPLOYEE
+		ORDER BY STATISTICS_CODE
+	</select>
+</mapper>

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.gmail.dao.MailDraftMapper">
+
+<resultMap type="MailDraftVO" id="draftMap" autoMapping="true">
+	<id property="empId" column="EMP_ID"/>
+	<id property="empMail" column="EMP_MAIL"/>
+	<id property="mailMessageId" column="MAIL_MESSAGE_ID"/>
+	<collection property="mailAttachmentList" ofType="MailAttachmentVO" autoMapping="true">
+	</collection>
+</resultMap>
+
+<sql id="searchListFrag">
+	<if test="variousCondition neq null">
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(variousCondition.value)">
+				<choose>
+                    <when test="variousCondition.type eq 'to'">
+                        AND INSTR(DMAIL_TO, #{variousCondition.value}) > 0
+                    </when>
+                    <when test="variousCondition.type eq 'title'">
+                        AND INSTR(DMAIL_SUBJECT, #{variousCondition.value}) > 0
+                    </when>
+                    <when test="variousCondition.type eq 'content'">
+                        AND INSTR(DMAIL_CONTENT, #{variousCondition.value}) > 0
+                    </when>
+                    <otherwise>
+                        AND (
+                            INSTR(DMAIL_TO, #{variousCondition.value}) > 0
+                            OR INSTR(DMAIL_SUBJECT, #{variousCondition.value}) > 0
+                            OR INSTR(DMAIL_CONTENT, #{variousCondition.value}) > 0
+                        )
+                    </otherwise>
+               	</choose>
+			</if>
+	</if>
+</sql>
+
+<select id="selectTotalRecord" resultType="int">
+	SELECT COUNT(*)
+	FROM MAIL_DRAFT
+	WHERE EMP_MAIL=#{variousCondition.empMail}
+	<include refid="searchListFrag" />
+</select>
+
+	
+<select id="selectDraftMailList" resultType="MailDraftVO">
+	SELECT B.*
+	FROM 
+	(
+		SELECT ROWNUM RNUM, A.*
+		FROM 
+		(
+			SELECT
+                EMP_ID
+                , EMP_MAIL
+                , MAIL_MESSAGE_ID
+                , DMAIL_TO
+                , DMAIL_CC
+                , DMAIL_DATE
+                , DMAIL_SUBJECT
+                , DMAIL_DRAFT_ID
+            FROM MAIL_DRAFT
+            WHERE EMP_MAIL=#{variousCondition.empMail}
+            <include refid="searchListFrag" />
+            ORDER BY DMAIL_DATE DESC
+			
+		) A
+	) B
+	WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+</select>
+
+<select id="selectDraftMailDetail" resultMap="draftMap">
+	SELECT MAIL_DRAFT.EMP_ID
+		, MAIL_DRAFT.EMP_MAIL
+		, MAIL_DRAFT.MAIL_MESSAGE_ID
+		, MAIL_DRAFT.DMAIL_TO
+		, MAIL_DRAFT.DMAIL_SUBJECT
+		, MAIL_DRAFT.DMAIL_DATE
+		, MAIL_DRAFT.DMAIL_CONTENT_TYPE
+		, MAIL_DRAFT.DMAIL_CONTENT
+		, MAIL_DRAFT.DMAIL_CC
+		, MAIL_DRAFT.DMAIL_BCC
+		, MAIL_DRAFT.DMAIL_REPLY_TO
+      	, MAIL_ATTACHMENT.EMP_ID
+ 		, MAIL_ATTACHMENT.EMP_MAIL
+ 		, MAIL_ATTACHMENT.MAILMESSAGE_ID
+ 		, MAIL_ATTACHMENT.MAILATTACHMENT_ID
+ 		, MAIL_ATTACHMENT.MAILATTACHMENT_NAME
+ 		, MAIL_ATTACHMENT.MAILATTACHMENT_MIMETYPE	
+	FROM MAIL_DRAFT
+	LEFT OUTER JOIN MAIL_ATTACHMENT
+	ON MAIL_DRAFT.MAIL_MESSAGE_ID = MAIL_ATTACHMENT.MAILMESSAGE_ID
+	WHERE MAIL_DRAFT.DMAIL_DRAFT_ID = #{draftId}
+</select>
+
+
+<select id="selectLastApiCallTime" resultType="String">
+	SELECT DMAIL_CALLTIME
+		FROM (
+		    SELECT DMAIL_CALLTIME
+		    FROM MAIL_DRAFT
+		    WHERE EMP_MAIL = #{empMail}
+		    ORDER BY DMAIL_CALLTIME DESC
+		)
+		WHERE ROWNUM = 1
+</select>
+
+
+<select id="selectDraftMailExist" resultType="int">
+	SELECT COUNT(*)
+	FROM MAIL_DRAFT
+	WHERE EMP_ID=#{empId}
+		AND EMP_MAIL=#{empMail}
+		AND MAIL_MESSAGE_ID=#{mailMessageId}
+</select>
+
+
+<insert id="insertDraftMail" parameterType="MailDraftVO">
+	INSERT INTO MAIL_DRAFT(
+		EMP_ID, EMP_MAIL, MAIL_MESSAGE_ID, DMAIL_TO, DMAIL_SUBJECT, DMAIL_DATE
+		, DMAIL_CONTENT_TYPE, DMAIL_CONTENT, DMAIL_CC, DMAIL_BCC, DMAIL_REPLY_TO
+		, DMAIL_CALLTIME, DMAIL_DRAFT_ID
+	)
+	VALUES(
+		#{empId,jdbcType=VARCHAR}
+		, #{empMail,jdbcType=VARCHAR}
+		, #{mailMessageId,jdbcType=VARCHAR}
+		, #{dmailTo,jdbcType=VARCHAR}
+		, #{dmailSubject,jdbcType=VARCHAR}
+		, #{dmailDate,jdbcType=VARCHAR}
+		, #{dmailContentType,jdbcType=VARCHAR}
+		, #{dmailContent,jdbcType=CLOB}
+		, #{dmailCc,jdbcType=VARCHAR}
+		, #{dmailBcc,jdbcType=VARCHAR}
+		, #{dmailReplyTo,jdbcType=VARCHAR}
+		, #{dmailCalltime,jdbcType=VARCHAR}
+		, #{dmailDraftId,jdbcType=VARCHAR}
+	)
+</insert>
+
+<delete id="deleteDraftMail">
+	DELETE FROM MAIL_DRAFT
+	WHERE DMAIL_DRAFT_ID=#{draftId}
+</delete>
+
+
+
+</mapper>

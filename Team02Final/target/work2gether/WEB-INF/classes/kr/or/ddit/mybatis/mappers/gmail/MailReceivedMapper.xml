@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.gmail.dao.MailReceivedMapper">
+<resultMap type="MailReceivedVO" id="receivedMap" autoMapping="true">
+	<id property="empId" column="EMP_ID"/>
+	<id property="empMail" column="EMP_MAIL"/>
+	<id property="mailMessageId" column="MAIL_MESSAGE_ID"/>
+	<collection property="mailAttachmentList" ofType="MailAttachmentVO" autoMapping="true">
+	</collection>
+</resultMap>
+
+<sql id="searchListFrag">
+	<if test="variousCondition neq null">
+			<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(variousCondition.value)">
+				<choose>
+                    <when test="variousCondition.type eq 'from'">
+                        AND INSTR(RMAIL_FROM, #{variousCondition.value}) > 0
+                    </when>
+                    <when test="variousCondition.type eq 'title'">
+                        AND INSTR(RMAIL_SUBJECT, #{variousCondition.value}) > 0
+                    </when>
+                    <when test="variousCondition.type eq 'content'">
+                        AND INSTR(RMAIL_CONTENT, #{variousCondition.value}) > 0
+                    </when>
+                    <otherwise>
+                        AND (
+                            INSTR(RMAIL_FROM, #{variousCondition.value}) > 0
+                            OR INSTR(RMAIL_SUBJECT, #{variousCondition.value}) > 0
+                            OR INSTR(RMAIL_CONTENT, #{variousCondition.value}) > 0
+                        )
+                    </otherwise>
+               	</choose>
+			</if>
+	</if>
+</sql>
+
+<select id="selectTotalRecord" resultType="int">
+	SELECT COUNT(*)
+	FROM MAIL_RECEIVED
+	WHERE EMP_MAIL=#{variousCondition.empMail}
+	<include refid="searchListFrag" />
+</select>
+	
+<select id="selectReceivedMailList" resultType="MailReceivedVO">
+	SELECT B.*
+	FROM 
+	(
+		SELECT ROWNUM RNUM, A.*
+		FROM 
+		(
+			SELECT
+                EMP_ID
+                , EMP_MAIL
+                , MAIL_MESSAGE_ID
+                , RMAIL_FROM
+                , RMAIL_CC
+                , RMAIL_DATE
+                , RMAIL_SUBJECT
+            FROM MAIL_RECEIVED
+            WHERE EMP_MAIL=#{variousCondition.empMail}
+            <include refid="searchListFrag" />
+            ORDER BY RMAIL_DATE DESC
+			
+		) A
+	) B
+	WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+</select>
+
+<select id="selectReceivedMailDetail" resultMap="receivedMap">
+	SELECT 	MAIL_RECEIVED.EMP_ID
+			, MAIL_RECEIVED.EMP_MAIL
+			, MAIL_RECEIVED.MAIL_MESSAGE_ID
+			, MAIL_RECEIVED.RMAIL_FROM
+			, MAIL_RECEIVED.RMAIL_CC
+			, MAIL_RECEIVED.RMAIL_REPLY_TO
+			, MAIL_RECEIVED.RMAIL_DATE
+			, MAIL_RECEIVED.RMAIL_SUBJECT
+			, MAIL_RECEIVED.RMAIL_CONTENT_TYPE
+			, MAIL_RECEIVED.RMAIL_CONTENT
+      		, MAIL_ATTACHMENT.EMP_ID
+      		, MAIL_ATTACHMENT.EMP_MAIL
+      		, MAIL_ATTACHMENT.MAILMESSAGE_ID
+      		, MAIL_ATTACHMENT.MAILATTACHMENT_ID
+      		, MAIL_ATTACHMENT.MAILATTACHMENT_NAME
+      		, MAIL_ATTACHMENT.MAILATTACHMENT_MIMETYPE      		
+	FROM MAIL_RECEIVED
+	LEFT OUTER JOIN MAIL_ATTACHMENT
+	ON MAIL_RECEIVED.MAIL_MESSAGE_ID = MAIL_ATTACHMENT.MAILMESSAGE_ID
+	WHERE MAIL_RECEIVED.MAIL_MESSAGE_ID = #{messageId}
+</select>
+
+
+
+
+<select id="selectLastApiCallTime" resultType="String">
+	SELECT RMAIL_CALLTIME
+		FROM (
+		    SELECT RMAIL_CALLTIME
+		    FROM MAIL_RECEIVED
+		    WHERE EMP_MAIL = #{empMail}
+		    ORDER BY RMAIL_CALLTIME DESC
+		)
+		WHERE ROWNUM = 1
+</select>
+
+
+<select id="selectReceivedMailExist" resultType="int">
+	SELECT COUNT(*)
+	FROM MAIL_RECEIVED
+	WHERE EMP_ID=#{empId}
+		AND EMP_MAIL=#{empMail}
+		AND MAIL_MESSAGE_ID=#{mailMessageId}
+</select>
+
+<insert id="insertReceivedMail" parameterType="MailReceivedVO">
+	INSERT INTO MAIL_RECEIVED(
+		EMP_ID, EMP_MAIL, MAIL_MESSAGE_ID, RMAIL_FROM, RMAIL_CC, RMAIL_REPLY_TO,
+		RMAIL_DATE, RMAIL_SUBJECT, RMAIL_CONTENT_TYPE, RMAIL_CONTENT, RMAIL_CALLTIME
+	)
+	VALUES(
+		#{empId,jdbcType=VARCHAR}
+		, #{empMail,jdbcType=VARCHAR}
+		, #{mailMessageId,jdbcType=VARCHAR}
+		, #{rmailFrom,jdbcType=VARCHAR}
+		, #{rmailCc,jdbcType=VARCHAR}
+		, #{rmailReplyTo,jdbcType=VARCHAR}
+		, #{rmailDate,jdbcType=VARCHAR}
+		, #{rmailSubject,jdbcType=VARCHAR}
+		, #{rmailContentType,jdbcType=VARCHAR}
+		, #{rmailContent,jdbcType=CLOB}
+		, #{rmailCalltime,jdbcType=VARCHAR}
+	)
+</insert>
+
+<delete id="deleteReceivedMail">
+	DELETE FROM MAIL_RECEIVED
+	WHERE MAIL_MESSAGE_ID=#{mailMessageid}
+</delete>
+
+
+</mapper>

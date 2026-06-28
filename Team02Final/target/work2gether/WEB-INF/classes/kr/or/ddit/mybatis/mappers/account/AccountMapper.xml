@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.account.dao.AccountMapper">
+
+<resultMap type="AccountVO" id="accountMap">
+    <discriminator javaType="String" column="USER_TYPE">
+        <!-- EMPLOYEE 타입일 경우 -->
+        <case value="EMPLOYEE" resultMap="employeeMap"/>
+        <!-- PROVIDER 타입일 경우 -->
+        <case value="PROVIDER" resultMap="providerMap"/>
+    </discriminator>
+</resultMap>
+
+<resultMap type="EmployeeVO" id="employeeMap" autoMapping="true">
+	<association property="oauth" javaType="OAuthVO" autoMapping="true">
+   			 </association>
+</resultMap>
+
+<!-- EMPLOYEE 전용 resultMap -->
+<!-- <resultMap id="employeeMap" type="AccountVO"> -->
+<!--     <association property="employee" javaType="EmployeeVO" autoMapping="true"> -->
+<!--     </association> -->
+<!--     <association property="oauth" javaType="OAuthVO" autoMapping="true"> -->
+<!--     </association> -->
+<!-- </resultMap> -->
+
+<!--  PROVIDER 전용 resultMap --> 
+<resultMap id="providerMap" type="ProviderVO" autoMapping="true">
+    <association property="account" autoMapping="true"></association>
+    
+</resultMap>
+
+
+<!-- 로그인 할 때 사용 -->
+<select id="selectAccountForAuth" resultMap="accountMap" parameterType="AccountVO">
+	SELECT 
+	    ACCOUNT.ACCOUNT_MAIL,
+	    ACCOUNT.ACCOUNT_PASS,
+	    ACCOUNT.ACCOUNT_YN,
+	    EMPLOYEE.EMP_ID,
+	    EMPLOYEE.EMP_PASS,
+	    EMPLOYEE.EMP_NAME,
+	    EMPLOYEE.EMP_BIRTH,
+	    EMPLOYEE.EMP_GENDER,
+	    EMPLOYEE.EMP_ADDR1,
+	    EMPLOYEE.EMP_ADDR2,
+	    EMPLOYEE.EMP_PHONE,
+	    EMPLOYEE.EMP_JOIN,
+	    EMPLOYEE.EMP_STATUS,
+	    EMPLOYEE.EMP_IMG,
+	    EMPLOYEE.EMP_SIGNIMG,
+	    EMPLOYEE.POSI_ID,
+	    EMPLOYEE.EMP_MAIL,
+	    EMPLOYEE.DEPART_CODE,
+	    EMPLOYEE.COMPANY_ID,
+	    EMPLOYEE.MY_COMMENT,
+	    PROVIDER.PROV_ID,
+	    PROVIDER.PROV_ACCESSKEY,
+	    PROVIDER.PROV_SECRETKEY,
+	    PROVIDER.ACCOUNT_MAIL AS PROVIDER_MAIL,
+	    PROVIDER.POSI_ID,
+	    COMMON_CODE.CODE_COMMENT AS ROLES,
+	    OAUTH.OAUTH_ACCESS,
+	    OAUTH.OAUTH_REFRESH,
+	    OAUTH.OAUTH_EMPMAIL,
+	    CASE 
+	        WHEN EMPLOYEE.EMP_ID IS NOT NULL THEN 'EMPLOYEE'
+	        WHEN PROVIDER.PROV_ID IS NOT NULL THEN 'PROVIDER'
+	        ELSE NULL
+	    END AS USER_TYPE
+	FROM ACCOUNT
+	LEFT OUTER JOIN EMPLOYEE ON ACCOUNT.ACCOUNT_MAIL = EMPLOYEE.EMP_MAIL
+	LEFT OUTER JOIN PROVIDER ON ACCOUNT.ACCOUNT_MAIL = PROVIDER.ACCOUNT_MAIL
+	LEFT OUTER JOIN COMMON_CODE
+	    ON (COMMON_CODE.TABLE_NAME = 'EMPLOYEE' 
+	    AND COMMON_CODE.CODE_TYPE = '직급' 
+	    AND COMMON_CODE.CODE = EMPLOYEE.POSI_ID)
+	    OR (COMMON_CODE.TABLE_NAME = 'PROVIDER' 
+	    AND COMMON_CODE.CODE_TYPE = '직급' 
+	    AND COMMON_CODE.CODE = PROVIDER.POSI_ID)
+   
+	LEFT JOIN OAUTH 
+	    ON EMPLOYEE.EMP_MAIL = OAUTH.OAUTH_EMPMAIL
+	WHERE ACCOUNT.ACCOUNT_MAIL = #{accountMail}
+</select>
+
+
+<select id="selectAccount" resultType="AccountVO">
+	SELECT 
+	    ACCOUNT_MAIL
+	    , ACCOUNT_PASS
+	    , ACCOUNT_YN
+	FROM ACCOUNT
+	WHERE ACCOUNT_MAIL=#{accountMail}
+</select>
+
+<select id="selectAccountList" resultType="AccountVO">
+	SELECT 
+	    ACCOUNT_MAIL
+	    , ACCOUNT_PASS
+	    , ACCOUNT_YN
+	FROM ACCOUNT
+</select>
+
+
+
+<!-- 회원 INSERT는 관리자만 진행함, 비밀번호는 초기비밀번호로 일괄등록되기 때문에 1234로 고정 -->
+<insert id="insertAccount">
+	INSERT INTO ACCOUNT(ACCOUNT_MAIL, ACCOUNT_PASS, ACCOUNT_YN)
+	VALUES(
+	    #{accountMail}
+	    ,'1234'
+	    ,'Y'
+	)
+</insert>
+
+<update id="updateAccount">
+	UPDATE ACCOUNT
+	SET 
+		<trim prefixOverrides=",">
+			<if test="accountMail neq null and accountMail.length gt 0">
+				, ACCOUNT_MAIL=#{accountMail,jdbcType=VARCHAR}
+			</if>
+			<if test="accountPass neq null and accountPass.length gt 0">
+				, ACCOUNT_PASS=#{accountPass,jdbcType=VARCHAR}
+			</if>
+			<if test="accountYn neq null and accountYn.length gt 0">
+				, ACCOUNT_YN=#{accountYn,jdbcType=VARCHAR}
+			</if>
+		</trim>
+	WHERE ACCOUNT_MAIL=#{accountMail}
+</update>
+
+
+<delete id="deleteAccount">
+
+</delete>
+
+</mapper>

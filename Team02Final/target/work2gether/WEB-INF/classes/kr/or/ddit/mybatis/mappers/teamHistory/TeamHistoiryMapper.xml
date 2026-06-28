@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.teamHistory.dao.TeamHistoryMapper">
+	
+	<resultMap type="kr.or.ddit.teamHistory.vo.TeamHistoryVO" id="temaHistoryMap" autoMapping="true">
+		<association property="teamHistoryDTO" autoMapping="true" />
+	</resultMap>
+	
+	<select id="readTeamHistoryList" resultMap="temaHistoryMap">
+		SELECT A.TEAM_ID
+		       , A.EMP_ID
+		       , B.EMP_NAME
+		       , A.TEAM_ASSIGNMENTDATE
+		       , B.DEPART_CODE
+		       , C.DEPART_NAME
+		       , D.CODE_COMMENT
+		  FROM TEAM_HISTORY A
+		  LEFT JOIN EMPLOYEE B ON A.EMP_ID = B.EMP_ID  
+		  LEFT JOIN DEPARTMENT C ON B.DEPART_CODE = C.DEPART_CODE
+		  LEFT JOIN COMMON_CODE D ON B.POSI_ID = D.CODE
+		  WHERE D.TABLE_NAME = 'EMPLOYEE'
+		  ORDER BY A.TEAM_ID
+	</select>
+	
+	<insert id="insertTeamHistory" parameterType="list">
+	    INSERT ALL
+	    <foreach collection="list" item="item">
+	        INTO TEAM_HISTORY (TEAM_ID, EMP_ID, TEAM_ASSIGNMENTDATE)
+	        VALUES (#{item.teamId}, #{item.empId}, SYSDATE)
+	    </foreach>
+	    SELECT 1 FROM DUAL
+	</insert>
+
+	
+</mapper>

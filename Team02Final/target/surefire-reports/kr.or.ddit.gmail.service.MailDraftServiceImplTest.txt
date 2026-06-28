@@ -1,0 +1,58 @@
+-------------------------------------------------------------------------------
+Test set: kr.or.ddit.gmail.service.MailDraftServiceImplTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 6, Errors: 0, Skipped: 0, Time elapsed: 0.003 s <<< FAILURE! -- in kr.or.ddit.gmail.service.MailDraftServiceImplTest
+kr.or.ddit.gmail.service.MailDraftServiceImplTest.testCreateDraftMail -- Time elapsed: 0.001 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Not yet implemented
+	at org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:38)
+	at org.junit.jupiter.api.Assertions.fail(Assertions.java:138)
+	at kr.or.ddit.gmail.service.MailDraftServiceImplTest.testCreateDraftMail(MailDraftServiceImplTest.java:31)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+kr.or.ddit.gmail.service.MailDraftServiceImplTest.testReadLastApiCallTime -- Time elapsed: 0 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Not yet implemented
+	at org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:38)
+	at org.junit.jupiter.api.Assertions.fail(Assertions.java:138)
+	at kr.or.ddit.gmail.service.MailDraftServiceImplTest.testReadLastApiCallTime(MailDraftServiceImplTest.java:11)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+kr.or.ddit.gmail.service.MailDraftServiceImplTest.testReadDraftMailDetail -- Time elapsed: 0.001 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Not yet implemented
+	at org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:38)
+	at org.junit.jupiter.api.Assertions.fail(Assertions.java:138)
+	at kr.or.ddit.gmail.service.MailDraftServiceImplTest.testReadDraftMailDetail(MailDraftServiceImplTest.java:21)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+kr.or.ddit.gmail.service.MailDraftServiceImplTest.testReadDraftMailExist -- Time elapsed: 0 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Not yet implemented
+	at org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:38)
+	at org.junit.jupiter.api.Assertions.fail(Assertions.java:138)
+	at kr.or.ddit.gmail.service.MailDraftServiceImplTest.testReadDraftMailExist(MailDraftServiceImplTest.java:26)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+kr.or.ddit.gmail.service.MailDraftServiceImplTest.testDeleteDraftMail -- Time elapsed: 0.001 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Not yet implemented
+	at org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:38)
+	at org.junit.jupiter.api.Assertions.fail(Assertions.java:138)
+	at kr.or.ddit.gmail.service.MailDraftServiceImplTest.testDeleteDraftMail(MailDraftServiceImplTest.java:36)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+kr.or.ddit.gmail.service.MailDraftServiceImplTest.testReadDraftMailList -- Time elapsed: 0 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Not yet implemented
+	at org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:38)
+	at org.junit.jupiter.api.Assertions.fail(Assertions.java:138)
+	at kr.or.ddit.gmail.service.MailDraftServiceImplTest.testReadDraftMailList(MailDraftServiceImplTest.java:16)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+

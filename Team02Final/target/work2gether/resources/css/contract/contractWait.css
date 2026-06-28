@@ -1,0 +1,79 @@
+@charset "UTF-8";
+
+/* 모달 전체 정리 */
+#waitComModal .modal-content {
+    border-radius: 10px;
+    border: none;
+    padding: 20px;
+}
+
+/* 테이블 스타일 */
+#waitComModal table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+#waitComModal th, #waitComModal td {
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: left;
+}
+
+#waitComModal th {
+    font-weight: bold;
+    color: #333;
+}
+
+#waitComModal td {
+    color: #555;
+}
+
+/* 계약 상세정보, 결제정보 구분선 */
+.important-info-section, .payment-info-section {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+}
+
+.important-info-section h5, .payment-info-section h5 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #007bff;
+}
+
+.important-info-section p, .payment-info-section p {
+    margin: 5px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+/* 버튼 스타일 */
+#okBtn, #rejectBtn {
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+}
+
+#okBtn {
+    background-color: #6c63ff;
+    color: white;
+}
+
+#rejectBtn {
+    background-color: #ff4d4d;
+    color: white;
+}
+
+#okBtn:hover {
+    background-color: #5a52e0;
+}
+
+#rejectBtn:hover {
+    background-color: #e04343;
+}

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.gmail.dao.MailAttachmentMapper">
+
+<select id="selectAttachmentList" resultType="MailAttachmentVO">
+	SELECT
+		EMP_ID
+		, EMP_MAIL
+		, MAILMESSAGE_ID
+		, MAILATTACHMENT_ID
+		, MAILATTACHMENT_NAME
+		, MAILATTACHMENT_MIMETYPE
+		, MAILATTACHMENT_HASHCODE
+	FROM MAIL_ATTACHMENT
+	WHERE MAILMESSAGE_ID=#{mailMessageId}
+</select>
+
+<select id="selectAttachmentExist" resultType="int">
+	SELECT COUNT(*)
+	FROM MAIL_ATTACHMENT
+	WHERE EMP_MAIL=#{empMail}
+		AND MAILMESSAGE_ID=#{mailmessageId}
+		<if test="mailattachmentHashcode neq null">
+		AND MAILATTACHMENT_HASHCODE=#{mailattachmentHashcode}
+		</if>
+</select>
+
+<select id="selectAttachmentDetail" resultType="MailAttachmentVO">
+	SELECT MAILATTACHMENT_MIMETYPE
+		,MAILATTACHMENT_NAME
+	FROM MAIL_ATTACHMENT
+	WHERE MAILMESSAGE_ID=#{mailmessageId} AND MAILATTACHMENT_ID=#{mailattachmentId}
+</select>
+
+<insert id="insertMailAttachment" parameterType="MailAttachmentVO">
+	INSERT INTO MAIL_ATTACHMENT(
+		EMP_ID, EMP_MAIL, MAILMESSAGE_ID,
+		MAILATTACHMENT_ID, MAILATTACHMENT_NAME, 
+		MAILATTACHMENT_MIMETYPE, MAILATTACHMENT_HASHCODE
+	)
+	VALUES(
+		#{empId,jdbcType=VARCHAR}
+		, #{empMail,jdbcType=VARCHAR}
+		, #{mailmessageId,jdbcType=VARCHAR}
+		, #{mailattachmentId,jdbcType=VARCHAR}
+		, #{mailattachmentName,jdbcType=VARCHAR}
+		, #{mailattachmentMimetype,jdbcType=VARCHAR}
+		, #{mailattachmentHashcode,jdbcType=VARCHAR}
+	)
+</insert>
+
+<delete id="deleteMailAttachment">
+	DELETE FROM MAIL_ATTACHMENT
+	WHERE MAILMESSAGE_ID = #{mailmessageId}
+</delete>
+
+</mapper>

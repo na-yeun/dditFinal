@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.message.dao.SendMessageMapper">
+
+	<resultMap type="SendMessageVO" id="sendList"
+		autoMapping="true">
+		<association property="depart" javaType="DepartmentVO"
+			autoMapping="true" />
+		<association property="employee" javaType="EmployeeVO"
+			autoMapping="true" />
+		<collection property="mappingList"
+			ofType="MessageMappingVO" autoMapping="true" />
+	</resultMap>
+
+<select id="selectTotalRecord" parameterType="map" resultType="int">
+  WITH V_SEND AS (
+    SELECT 
+        MS.SMES_ID,
+        MS.SMES_TITLE,
+        MS.SMES_CONTENT,
+        MS.SMES_DATE,
+        MS.SEMERGENCY_YN,
+        MS.MESSEND_ID,
+        LISTAGG(E.EMP_NAME, ', ') WITHIN GROUP (ORDER BY E.EMP_NAME) AS RECEIVER_NAMES
+    FROM MESSAGE_SEND MS
+    LEFT JOIN MESSAGE_MAPPING MP ON MS.SMES_ID = MP.SMES_ID
+    LEFT JOIN EMPLOYEE E ON MP.RECEIVE_ID = E.EMP_ID
+    WHERE MS.MESSEND_ID = #{empId}
+    GROUP BY MS.SMES_ID, MS.SMES_TITLE, MS.SMES_CONTENT, MS.SMES_DATE, MS.SEMERGENCY_YN, MS.MESSEND_ID
+  )
+  SELECT COUNT(V.SMES_ID)
+  FROM V_SEND V
+  WHERE 1=1
+  <include refid="searchFlag"/>
+</select>
+
+
+	
+	<sql id="searchFlag">
+		
+					<if test="paging neq null and paging.simpleCondition neq null">
+					<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(paging.simpleCondition.searchWord)">
+						<choose>
+							<when test="paging.simpleCondition.searchType eq 'receive' ">
+								AND V.RECEIVER_NAMES LIKE'%'|| #{paging.simpleCondition.searchWord} ||'%'
+							</when>
+							<when test="paging.simpleCondition.searchType eq 'title' ">
+								AND INSTR(V.SMES_TITLE, #{paging.simpleCondition.searchWord}) >0
+							</when>
+							<otherwise>
+								AND (INSTR(V.RECEIVER_NAMES , #{paging.simpleCondition.searchWord}) >0
+								OR
+								INSTR(V.SMES_TITLE, #{paging.simpleCondition.searchWord}) >0)
+							</otherwise>
+						</choose>
+						</if>
+					</if>
+		
+	</sql>
+
+	<select id="selectSendMessageList" resultMap="sendList">
+		WITH V_SEND AS (
+	    SELECT
+	        MS.SMES_ID,
+	        MS.SMES_TITLE,
+	        MS.SMES_CONTENT,
+	        MS.SMES_DATE,
+	        MS.SEMERGENCY_YN,
+	        MS.MESSEND_ID,
+	        LISTAGG(E.EMP_NAME, ', ') WITHIN GROUP (ORDER BY E.EMP_NAME) AS RECEIVER_NAMES
+	    FROM MESSAGE_SEND MS
+	    LEFT JOIN MESSAGE_MAPPING MP ON MS.SMES_ID = MP.SMES_ID
+	    LEFT JOIN EMPLOYEE E ON MP.RECEIVE_ID = E.EMP_ID
+	    WHERE MS.MESSEND_ID = #{empId}
+	    GROUP BY MS.SMES_ID, MS.SMES_TITLE, MS.SMES_CONTENT, MS.SMES_DATE, MS.SEMERGENCY_YN, MS.MESSEND_ID
+		)		
+		
+		SELECT A.*
+		FROM(SELECT 
+		ROW_NUMBER() OVER (ORDER BY V.SMES_DATE DESC) AS RNUM, -- 날짜 기준으로 정렬
+			V.SMES_ID,
+	        V.SMES_TITLE,
+	        V.SMES_CONTENT,
+	        V.SMES_DATE,
+	        V.SEMERGENCY_YN,
+	        V.MESSEND_ID,
+	        V.RECEIVER_NAMES
+		FROM V_SEND V
+		WHERE 1=1 <include refid="searchFlag"/>
+		)A
+		<if test="paging neq null">
+		    <![CDATA[
+		       WHERE RNUM >= #{paging.startRow} AND RNUM <= #{paging.endRow}
+		    ]]>
+		</if>
+		
+		
+	</select>
+
+	<select id="selectSendMessageOne" resultMap="sendList">
+		WITH V_SEND AS (
+		SELECT
+		MS.SMES_ID,
+		MS.SMES_TITLE,
+		MS.SMES_CONTENT,
+		MS.SMES_DATE,
+		MS.SEMERGENCY_YN,
+		MS.MESSEND_ID,
+		MP.MAP_ID,
+		MP.RECEIVE_ID,
+		MP.MES_RECEREAD
+		FROM MESSAGE_SEND MS
+		LEFT JOIN MESSAGE_MAPPING MP ON MS.SMES_ID = MP.SMES_ID
+		),
+		V_EMP AS (
+		SELECT
+		VS.SMES_ID,
+		VS.SMES_TITLE,
+		VS.SMES_CONTENT,
+		VS.SMES_DATE,
+		VS.SEMERGENCY_YN,
+		VS.MESSEND_ID,
+		VS.MAP_ID,
+		VS.RECEIVE_ID,
+		VS.MES_RECEREAD,
+		E.EMP_ID,
+		LISTAGG(E.EMP_NAME, ', ') WITHIN GROUP (ORDER BY E.EMP_NAME) AS RECEIVER_NAMES,
+		E.POSI_ID,
+		E.DEPART_CODE
+		FROM V_SEND VS
+		INNER JOIN EMPLOYEE E ON VS.RECEIVE_ID = E.EMP_ID
+		GROUP BY
+		VS.SMES_ID,
+		VS.SMES_TITLE,
+		VS.SMES_CONTENT,
+		VS.SMES_DATE,
+		VS.SEMERGENCY_YN,
+		VS.MESSEND_ID,
+		VS.MAP_ID,
+		VS.RECEIVE_ID,
+		VS.MES_RECEREAD,
+		E.EMP_ID,
+		E.POSI_ID,
+		E.DEPART_CODE
+		)
+		SELECT
+		VE.SMES_ID,
+		VE.SMES_TITLE,
+		VE.SMES_CONTENT,
+		VE.SMES_DATE,
+		VE.SEMERGENCY_YN,
+		VE.MESSEND_ID,
+		VE.MAP_ID,
+		VE.RECEIVE_ID,
+		VE.MES_RECEREAD,
+		VE.EMP_ID,
+		VE.RECEIVER_NAMES,
+		VE.POSI_ID,
+		VE.DEPART_CODE,
+		D.DEPART_NAME
+		FROM V_EMP VE
+		INNER JOIN DEPARTMENT D ON VE.DEPART_CODE = D.DEPART_CODE
+		WHERE VE.SMES_ID = #{smesId}
+
+
+	</select>
+
+	<insert id="insertSendMessage" parameterType="SendMessageVO" useGeneratedKeys="true" keyProperty="smesId">
+		
+		<selectKey keyProperty="smesId" resultType="String"
+			order="BEFORE">
+			SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') ||
+			LPAD(SMES_ID_SEQ.NEXTVAL, 5, '0') AS
+			SMES_ID FROM DUAL
+		</selectKey>
+		
+		INSERT INTO MESSAGE_SEND
+		(
+		SMES_ID
+		,SMES_TITLE
+		,SMES_CONTENT
+		,SMES_DATE
+		,SEMERGENCY_YN
+		,MESSEND_ID
+
+		)
+		VALUES
+		(
+		#{smesId, jdbcType=VARCHAR}
+		,#{smesTitle,jdbcType=VARCHAR}
+		,#{smesContent,jdbcType=VARCHAR}
+		,SYSDATE
+		,#{semergencyYn,jdbcType=CHAR}
+		,#{messendId,jdbcType=VARCHAR}
+
+		)
+	</insert>
+
+	<delete id="deleteSendMessage">
+		DELETE FROM MESSAGE_SEND
+		WHERE SMES_ID = #{smesId}
+	</delete>
+
+</mapper>

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.organitree.dao.OrganiTreeMapper">
+
+
+
+
+
+<resultMap type="DepartmentVO" id="departmentVO" autoMapping="true">
+    <id property="departCode" column="DEPART_CODE" />
+    <result property="departName" column="DEPART_NAME" />
+    <result property="departParentcode" column="DEPART_PARENTCODE" />
+    <collection property="employeeList" ofType="EmployeeVO" autoMapping="true"/>
+</resultMap>
+    
+        
+        
+
+        
+
+
+
+<select id="selectOrganiList" resultMap="departmentVO" >
+SELECT 
+  DEPART_CODE
+, DEPART_NAME
+, DEPART_PARENTCODE
+, DEPART_STATUS
+FROM DEPARTMENT
+WHERE DEPART_STATUS='Y' 
+		
+</select>
+
+<resultMap type="EmployeeVO" id="employeeVO">
+    <result property="empId" column="EMP_ID"/>
+    <result property="empName" column="EMP_NAME"/>
+    <result property="empPhone" column="EMP_PHONE"/>
+    <result property="empJoin" column="EMP_JOIN"/>
+    <result property="posiName" column="POSI_NAME"/>
+    <!-- 필요에 따라 다른 필드도 추가 -->
+</resultMap>
+
+
+<select id="selectOneOrganiList" resultMap="departmentVO">
+SELECT 
+    e.EMP_ID,
+    e.EMP_NAME,
+    e.EMP_PHONE,
+    e.EMP_JOIN,
+    (SELECT cc.CODE_COMMENT 
+     FROM COMMON_CODE cc
+     WHERE cc.TABLE_NAME = 'EMPLOYEE'
+       AND cc.CODE_TYPE = '직급'
+       AND cc.CODE = e.POSI_ID) AS POSI_NAME 
+FROM EMPLOYEE e 
+WHERE 1=1
+  AND e.DEPART_CODE = #{departCode}  
+  AND (e.EMP_STATUS = 'U' OR e.EMP_STATUS = 'V' OR e.EMP_STATUS = 'S' OR e.EMP_STATUS='W')
+
+</select>
+
+<select id="selectOneEmployeeDetail" resultMap="employeeVO">
+SELECT 
+  e.EMP_IMG
+, e.EMP_ID
+, e.EMP_NAME
+, e.EMP_PHONE
+, e.EMP_MAIL
+, e.EMP_JOIN
+, (SELECT cc.CODE_COMMENT 
+     FROM COMMON_CODE cc
+     WHERE cc.TABLE_NAME = 'EMPLOYEE'
+       AND cc.CODE_TYPE = '직급'
+       AND cc.CODE = e.POSI_ID) AS POSI_NAME
+FROM EMPLOYEE e 
+WHERE EMP_ID=#{empId}
+	
+</select>
+
+	
+<select id="searchOneEmployeeDetail" resultMap="employeeVO">
+SELECT 
+    e.EMP_IMG,
+    e.EMP_ID,
+    e.EMP_NAME,
+    e.EMP_PHONE,
+    (SELECT cc.CODE_COMMENT 
+     FROM COMMON_CODE cc
+     WHERE cc.TABLE_NAME = 'EMPLOYEE'
+       AND cc.CODE_TYPE = '직급'
+       AND cc.CODE = e.POSI_ID) AS POSI_NAME, 
+    e.EMP_MAIL,
+    e.EMP_JOIN
+FROM EMPLOYEE e
+WHERE e.EMP_NAME IS NOT NULL 
+  AND INSTR(e.EMP_NAME, #{empName}) > 0
+  AND (e.EMP_STATUS = 'U' OR e.EMP_STATUS = 'V' OR e.EMP_STATUS = 'S')
+
+
+</select>
+
+
+
+<select id="selectDirectory" resultMap="departmentVO" >
+
+SELECT DISTINCT
+     LEVEL AS LVL              
+   , D.DEPART_CODE             
+   , D.DEPART_NAME
+   , D.DEPART_PARENTCODE             
+   , E.EMP_ID                  
+   , E.EMP_NAME                   
+   , E.EMP_MAIL             
+   , (SELECT cc.CODE_COMMENT 
+  		FROM COMMON_CODE cc
+	   WHERE cc.TABLE_NAME = 'EMPLOYEE'
+	     AND cc.CODE_TYPE = '직급'
+	     AND cc.CODE = e.POSI_ID) AS POSI_NAME
+  FROM 
+    DEPARTMENT D LEFT OUTER JOIN EMPLOYEE E ON D.DEPART_CODE = E.DEPART_CODE 
+                 WHERE DEPART_STATUS='Y' AND (e.EMP_STATUS = 'U' OR e.EMP_STATUS = 'V' OR e.EMP_STATUS = 'S')                 
+ CONNECT BY PRIOR D.DEPART_CODE = D.DEPART_PARENTCODE
+  START WITH D.DEPART_PARENTCODE IS NULL
+  ORDER SIBLINGS BY D.DEPART_CODE
+
+</select>
+
+<select id="selectOneDepart" resultType="DepartmentVO">
+SELECT * FROM DEPARTMENT 
+WHERE DEPART_CODE = #{departCode}
+</select>
+
+<update id="updateOneDepart">
+UPDATE DEPARTMENT 
+	SET DEPART_NAME = #{departName}
+   WHERE DEPART_CODE =#{departCode}
+</update>
+
+
+<insert id="insertOneDepart">
+	
+INSERT INTO DEPARTMENT (
+    DEPART_CODE
+  , DEPART_PARENTCODE
+  , CONTRACT_ID 
+  , DEPART_NAME
+  , DEPART_STATUS
+  , DEPART_HEAD 
+  )
+VALUES (
+    (SELECT 'DEP' || LPAD(NVL(MAX(SUBSTR(DEPART_CODE, 4)), 0) + 1, 3, '0') 
+       FROM DEPARTMENT)
+     , #{departParentcode}
+     , #{contractId}
+     , #{departName}
+     , 'Y'
+     , 'null'
+)
+	
+</insert>
+
+<update id="deleteOneDepart">
+UPDATE DEPARTMENT
+SET DEPART_STATUS = 'N' 
+WHERE DEPART_CODE = #{departCode}
+
+
+</update>
+
+<select id="selectChildDepList" resultType="DepartmentVO">
+	
+	SELECT * FROM DEPARTMENT
+		WHERE  DEPART_PARENTCODE = #{departCode}
+   	   AND DEPART_STATUS = 'Y'
+	
+</select>
+
+
+<select id="selectDepartNameCheck" resultType="int">
+	SELECT 
+	     COUNT(*) 
+	  FROM DEPARTMENT 
+	 WHERE DEPART_NAME = #{departName}
+	   AND DEPART_STATUS = 'Y'
+</select>
+
+
+
+
+
+</mapper>

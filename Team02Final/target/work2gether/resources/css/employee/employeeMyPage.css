@@ -1,0 +1,31 @@
+@charset "UTF-8";
+
+table {
+	width: 85%;
+}
+
+.tdname {
+	text-align: center;
+}
+
+td {
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+.my-page-a{
+	color: black;
+	margin-bottom : 10px;
+}
+
+.form-group{
+	width: 500px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.form-group input{
+	flex:1;
+	
+}

@@ -1,0 +1,224 @@
+@charset "UTF-8";
+
+.card.container {
+    height: 800px; /* 예: 10명에 맞는 높이 (실제 높이에 맞게 조정) */
+    overflow-y: auto; /* 내용이 넘칠 경우 스크롤바 생성 */
+    max-height: 800px; /* 최대 높이 제한 */
+    position: relative; /* 버튼 고정 위치 설정 */
+}
+
+#pagination {
+    display: block;
+}
+
+#pagination.hidden {
+    display: none;
+}
+/* 페이지네이션 컨테이너 스타일 */
+.pagination-container {
+    display: flex;
+    flex-wrap: wrap; /* 버튼들이 화면을 넘어가면 줄바꿈 */
+    justify-content: center; /* 가운데 정렬 */
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding: 10px;
+}
+
+/* 페이지네이션 버튼 공통 스타일 */
+.pagination-container button {
+    border: 1px solid #ddd;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* 활성 페이지 스타일 */
+.pagination-container button.active {
+    background-color: #6c5ce7;
+    color: white;
+    border: 1px solid #6c5ce7;
+}
+
+
+
+.filter-container {
+  display: flex; /* 가로 정렬 */
+  align-items: center; /* 세로 중앙 정렬 */
+  gap: 15px; /* 요소 간의 기본 간격 */
+  margin-bottom: 10px; /* 테이블과의 여백 */
+}
+  
+.search-container {
+  display: flex;
+  flex-wrap : wrap;
+  align-items: center;
+  position: relative;
+  width: 200px;
+  margin-left: auto; /* 검색창을 오른쪽 끝으로 정렬 */
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.5rem 2.5rem 0.5rem 1rem;
+  box-sizing: border-box;
+}  
+
+table {
+    table-layout: auto; /* 자동으로 셀 너비 조정 */
+    width: 100%;
+}
+
+th, td {
+    white-space: nowrap;      /* 줄바꿈 방지 */
+    overflow: hidden;         /* 넘치는 내용 숨기기 */
+    text-overflow: ellipsis;  /* 넘치는 내용은 '...'로 표시 */
+    padding: 8px;             /* 셀 안쪽 여백 */
+}
+
+th {
+    text-align: center; /* 헤더 가운데 정렬 */
+}
+
+td {
+    text-align: center; /* 내용 가운데 정렬 */
+}
+
+
+.th-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px; /* 텍스트와 화살표 사이 여백 */
+}
+
+.arrow {
+    font-size: 12px; /* 화살표 크기 */
+    line-height: 1;
+}
+
+
+.arrow.asc::after {
+  content: "▲"; /* 오름차순 */
+}
+
+.arrow.desc::after {
+  content: "▼"; /* 내림차순 */
+}
+ 
+/* .swal-container {
+  z-index: 1301 !important;  MUI Drawer 기본 z-index보다 높은 값
+} */
+/* 일반적인 z-index 설정 */
+.swal2-container {
+  z-index: 1101; /* Bootstrap 모달보다 높은 값 설정 */
+  pointer-events: auto !important;
+}
+
+.swal2-custom-popup {
+  z-index: 1101 ;  /* 동일하게 높은 값 설정 */
+}
+.swal2-textarea {
+    pointer-events: auto !important;
+    cursor: text;
+}
+
+#rowOne:hover {
+	background-color: #f5f5f5;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}  
+ 
+
+.container .form-item {
+    margin-bottom: 20px;
+}
+
+.container .form-label {
+    font-size: 18px; /* 라벨 크기 키움 */
+    color: #495057; /* 더 진한 회색 */
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.container .form-value {
+    font-size: 16px;
+    color: #6c757d;
+	font-weight: bold; /* 글자 강조 */
+}
+
+.container .form-value ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.container .form-value li.list-item {
+    padding: 5px 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    font-size: 14px;
+    color: #495057;
+}
+
+/* 기존 스타일 유지 */
+
+.row-three-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.row-three-item .form-item {
+    flex: 1;
+    min-width: 150px;
+}
+
+.inline-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.inline-value {
+    display: inline-block;
+    background-color: #f8f9fa;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    font-size: 14px;
+    color: #495057;
+    white-space: nowrap;
+}
+
+.important-info-section {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+}
+
+.payment-info-section {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 10px;
+    background-color: #eaf6ff;
+}
+.important-info-section h5, .payment-info-section h5 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #007bff;
+}
+
+
+
+
+  

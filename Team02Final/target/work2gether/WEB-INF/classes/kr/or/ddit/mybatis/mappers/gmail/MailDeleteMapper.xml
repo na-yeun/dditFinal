@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.gmail.dao.MailDeleteMapper">
+
+<resultMap type="MailDeleteVO" id="deleteMap" autoMapping="true">
+	<id property="empId" column="EMP_ID"/>
+	<id property="empMail" column="EMP_MAIL"/>
+	<id property="mailMessageId" column="MAIL_MESSAGE_ID"/>
+	<collection property="mailAttachmentList" ofType="MailAttachmentVO" autoMapping="true">
+	</collection>
+</resultMap>
+
+<sql id="searchListFrag">
+	<if test="variousCondition neq null">
+		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(variousCondition.value)">
+			<choose>
+                <when test="variousCondition.type eq 'to'">
+                    AND INSTR(DELMAIL_TO, #{variousCondition.value}) > 0
+                </when>
+                <when test="variousCondition.type eq 'from'">
+                    AND INSTR(DELMAIL_FROM, #{variousCondition.value}) > 0
+                </when>
+                <when test="variousCondition.type eq 'title'">
+                    AND INSTR(DELMAIL_SUBJECT, #{variousCondition.value}) > 0
+                </when>
+                <when test="variousCondition.type eq 'content'">
+                    AND INSTR(DELMAIL_CONTENT, #{variousCondition.value}) > 0
+                </when>
+                <otherwise>
+                    AND (
+                        INSTR(DELMAIL_TO, #{variousCondition.value}) > 0
+                        OR INSTR(DELMAIL_FROM, #{variousCondition.value}) > 0
+                        OR INSTR(DELMAIL_SUBJECT, #{variousCondition.value}) > 0
+                        OR INSTR(DELMAIL_CONTENT, #{variousCondition.value}) > 0
+                    )
+                </otherwise>
+           	</choose>
+		</if>
+	</if>
+</sql>
+
+<select id="selectTotalRecord" resultType="int">
+	SELECT COUNT(*)
+	FROM MAIL_DELETE
+	WHERE EMP_MAIL=#{variousCondition.empMail}
+	<include refid="searchListFrag" />
+</select>
+
+<select id="selectDeleteMailList" resultType="MailDeleteVO">
+	SELECT B.*
+	FROM 
+	(
+		SELECT ROWNUM RNUM, A.*
+		FROM 
+		(
+			SELECT
+                EMP_ID
+                , EMP_MAIL
+                , MAIL_MESSAGE_ID
+                , DELMAIL_TO
+                , DELMAIL_FROM
+                , DELMAIL_DATE
+                , DELMAIL_SUBJECT
+            FROM MAIL_DELETE
+            WHERE EMP_MAIL=#{variousCondition.empMail}
+            <include refid="searchListFrag" />
+            ORDER BY DELMAIL_DATE DESC
+			
+		) A
+	) B
+	WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+</select>
+
+<select id="selectDeleteMailDetail" resultMap="deleteMap">
+	SELECT MAIL_DELETE.EMP_ID
+		, MAIL_DELETE.EMP_MAIL
+		, MAIL_DELETE.MAIL_MESSAGE_ID
+		, MAIL_DELETE.DELMAIL_TO
+		, MAIL_DELETE.DELMAIL_FROM
+		, MAIL_DELETE.DELMAIL_SUBJECT
+		, MAIL_DELETE.DELMAIL_DATE
+		, MAIL_DELETE.DELMAIL_CONTENT_TYPE
+		, MAIL_DELETE.DELMAIL_CONTENT
+		, MAIL_DELETE.DELMAIL_CC
+		, MAIL_DELETE.DELMAIL_BCC
+		, MAIL_DELETE.DELMAIL_REPLY_TO
+      	, MAIL_ATTACHMENT.EMP_ID
+ 		, MAIL_ATTACHMENT.EMP_MAIL
+ 		, MAIL_ATTACHMENT.MAILMESSAGE_ID
+ 		, MAIL_ATTACHMENT.MAILATTACHMENT_ID
+ 		, MAIL_ATTACHMENT.MAILATTACHMENT_NAME
+ 		, MAIL_ATTACHMENT.MAILATTACHMENT_MIMETYPE	
+	FROM MAIL_DELETE
+	LEFT OUTER JOIN MAIL_ATTACHMENT
+	ON MAIL_DELETE.MAIL_MESSAGE_ID = MAIL_ATTACHMENT.MAILMESSAGE_ID
+	WHERE MAIL_DELETE.MAIL_MESSAGE_ID = #{messageId}
+</select>
+
+<select id="selectLastApiCallTime" resultType="String">
+	SELECT DELMAIL_CALLTIME
+		FROM (
+		    SELECT DELMAIL_CALLTIME
+		    FROM MAIL_DELETE
+		    WHERE EMP_MAIL = #{empMail}
+		    ORDER BY DELMAIL_CALLTIME DESC
+		)
+		WHERE ROWNUM = 1
+</select>
+
+
+<select id="selectDeleteMailExist" resultType="int">
+	SELECT COUNT(*)
+	FROM MAIL_DELETE
+	WHERE EMP_ID=#{empId}
+		AND EMP_MAIL=#{empMail}
+		AND MAIL_MESSAGE_ID=#{mailMessageId}
+</select>
+
+
+<insert id="insertDeleteMail" parameterType="MailDeleteVO">
+	INSERT INTO MAIL_DELETE(
+		EMP_ID
+		, EMP_MAIL
+		, MAIL_MESSAGE_ID
+		, DELMAIL_TO
+		, DELMAIL_FROM
+		, DELMAIL_SUBJECT
+		, DELMAIL_DATE
+		, DELMAIL_CONTENT_TYPE
+		, DELMAIL_CONTENT
+		, DELMAIL_CC
+		, DELMAIL_BCC
+		, DELMAIL_REPLY_TO
+		, DELMAIL_CALLTIME
+	)
+	VALUES(
+		#{empId,jdbcType=VARCHAR}
+		, #{empMail,jdbcType=VARCHAR}
+		, #{mailMessageId,jdbcType=VARCHAR}		
+		, #{delmailTo,jdbcType=VARCHAR}
+		, #{delmailFrom,jdbcType=VARCHAR}
+		, #{delmailSubject,jdbcType=VARCHAR}
+		, #{delmailDate,jdbcType=VARCHAR}
+		, #{delmailContentType,jdbcType=VARCHAR}
+		, #{delmailContent,jdbcType=CLOB}
+		, #{delmailCc,jdbcType=VARCHAR}
+		, #{delmailBcc,jdbcType=VARCHAR}
+		, #{delmailReplyTo,jdbcType=VARCHAR}
+		, #{delmailCalltime,jdbcType=VARCHAR}
+	)
+</insert>
+
+<delete id="deleteDeleteMail">
+	DELETE FROM MAIL_DELETE
+	WHERE MAIL_MESSAGE_ID=#{mailMessageid}
+</delete>
+
+
+</mapper>

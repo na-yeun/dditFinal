@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.approval.dao.ApprovalReferenceMapper">
+
+<!--    참조자 그룹 생성하기전 시퀀스 값 알아보기-->
+    <select id="getNextRefSeq" parameterType="string" resultType="int">
+        SELECT NVL(
+                       (
+                           SELECT MAX(TO_NUMBER(SUBSTR(REF_ID, -4))) + 1
+                           FROM DOC_REFERENCE
+                           WHERE SUBSTR(REF_ID, 5, 4) = #{yearMonth}
+                       ),
+                       1
+               ) AS next_seq
+        FROM DUAL
+    </select>
+
+<!--    참조자 그룹 생성하기-->
+    <insert id="insertDocumentReference" parameterType="kr.or.ddit.approval.vo.ApprovalReferenceVO">
+        INSERT INTO DOC_REFERENCE (
+                              REF_ID
+                             ,DOC_ID
+        ) VALUES (
+                  #{refId}
+                 ,#{docId}
+                 )
+    </insert>
+
+<!--    참조자 수 만큼 일괄 저장하기-->
+    <insert id="insertReferenceEmployees" parameterType="java.util.List">
+        INSERT ALL
+        <foreach collection="list" item="refEmployee" separator=" ">
+            INTO REFERENCE_EMPLOYEE (
+            REF_ID,
+            EMP_ID
+            ) VALUES (
+            #{refEmployee.refId},
+            #{refEmployee.empId}
+            )
+        </foreach>
+        SELECT * FROM DUAL
+    </insert>
+
+</mapper>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Configuration xmlns="https://logging.apache.org/xml/ns"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="
+                   https://logging.apache.org/xml/ns
+                   https://logging.apache.org/xml/ns/log4j-config-2.xsd">
+<!--   appender : 메시지를 기록할 매체 (console, file , DB) 								-->
+<!--   layout :  메시지 기록 형식 (pattern) 											-->
+<!--   logger :  메시지 기록자 															-->
+<!--   level : 로깅 메시지 이벤트 등급, 메시지의 기록 여부를 제어할때 사용됨. 					-->
+<!--   TRACE DEBUG INFO WARN ERROR FATAL   LOG LEVEL 단계								-->
+<!--   logger에 설정된 이벤트 등급에 비해 메시지의 이벤트 등급이 낮게 설정된 경우, 메시지는 기록되지 않음. -->
+  <Appenders>
+    <Console name="CONSOLE"> 
+      <PatternLayout pattern="%p - %c %n --> %m%n"/> 
+				<!-- %p : 로그레벨 , %c : 로그가 기록된 클래스 또는 로그 name  ,  %n 은 줄바꿈 -->
+    </Console>
+  </Appenders>
+  
+  <Loggers>
+    <Root level="ERROR"> 
+      <AppenderRef ref="CONSOLE" />
+    </Root>
+<!--     <Logger name="kr.or.ddit.member.dao.MemberDAO.selectMemberList" level="TRACE">  -->
+    <Logger name="kr.or.ddit" level="INFO"/>  
+    <Logger name="jdbc.sqltiming" level="INFO"/> 
+    <Logger name="jdbc.resultsettable" level="INFO"/> 
+    <Logger name="org.springframework" level="INFO"/> 
+    <Logger name="org.springframework.web" level="ERROR"/> 
+    <Logger name="org.springframework.security" level="INFO"/> 
+    <Logger name="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping" level="TRACE"/> 
+<!--       <AppenderRef ref="CONSOLE"/> --> <!-- 같은 어펜드면 지우기 : 똑같은게 두번 출력됨. -->
+    
+  </Loggers>
+</Configuration>

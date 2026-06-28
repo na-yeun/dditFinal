@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.scheduletype.dao.ScheduleTypeMapper">
+	
+	
+	<select id="selectScheduleTypeList">
+		
+		SELECT SCHETYPE_ID
+				,SCHETYPE_NAME
+		FROM SCHEDULE_TYPE
+	</select>
+	
+	<select id="selectScheduleTypeOne">
+		SELECT SCHETYPE_ID
+				,SCHETYPE_NAME
+		FROM SCHEDULE_TYPE
+		WHERE SCHETYPE_ID = #{schetypeId}
+	</select>
+	
+</mapper>

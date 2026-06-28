@@ -1,0 +1,871 @@
+/* 문서 미리보기 영역 */
+.preview-container {
+    padding: 20px;
+}
+
+
+.swal2-high-zindex {
+    z-index: 9999 !important;
+    position: fixed !important; /* 화면 전체 덮기 */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.swal2-container {
+    z-index: 2000  !important;
+}
+
+.swal2-popup {
+    z-index: 10001 !important;
+}
+
+/* 결재선 관련 스타일 */
+#approval-line-container {
+    position: absolute;
+    top: 0;
+    right: 20px;
+    text-align: left;
+    margin-top: 1cm;
+}
+
+#approver-list {
+    display: flex;
+    gap: 5px;
+    justify-content: flex-end;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.approver-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+    border: 1px solid #000000;
+    padding: 5px;
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.stamp-box {
+    width: 60px;
+    height: 60px;
+    border: 1px solid #000000;
+    margin-bottom: 3px;
+    background-color: #fff;
+}
+
+.approver-info {
+    font-size: 12px;
+    text-align: center;
+    word-break: keep-all;
+    display: inline;
+}
+
+/* 조직도 트리 영역 */
+.org-tree {
+    height: 100%;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+.org-tree > ul {  /* 최상위 ul */
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.org-tree ul ul {  /* 하위 ul들 */
+    list-style: none;
+    padding-left: 20px;
+}
+
+.org-tree li {
+    padding: 3px 0;
+    cursor: pointer;
+}
+
+.folder.open > span:before {
+    content: "📂";
+}
+
+.folder.closed > ul {
+    display: none;
+}
+
+.folder.open > ul {
+    display: block;
+}
+
+.folder > span:before {
+    content: '📁';
+    display: inline-block;
+    margin-right: 5px;
+    transition: transform 0.2s;
+}
+
+.folder.open > span:before {
+    transform: rotate(90deg);
+}
+
+.folder .employee {
+    padding-left: 20px;
+}
+
+.folder > ul {
+    display: none;
+}
+
+.folder.open > ul {
+    display: block;
+}
+
+/* 1. 모달 기본 레이아웃 */
+#approvalLineModal .modal-dialog {
+    max-width: 1200px;
+    height: 800px;
+    margin: 1.75rem auto;
+}
+
+#approvalLineModal .modal-content {
+    height: 100%;
+}
+
+#approvalLineModal .modal-body {
+    height: calc(100% - 120px); /* 헤더(60px)와 푸터(60px) 제외 */
+    display: flex;
+    padding: 1rem;
+    overflow: hidden;
+}
+
+/* 2. 좌우 분할 레이아웃 */
+.modal-body > .row {
+    width: 100%;
+    margin: 0;
+}
+
+/* 3. 왼쪽 영역 (조직도) */
+.modal-body .col-6:first-child {
+    height: 100%;
+    padding-right: 1rem;
+}
+
+/* 4. 오른쪽 영역 (결재선 관리) */
+.modal-body .col-6:last-child {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-left: 1rem;
+}
+
+
+/* 결재자 목록 */
+.approver-list {
+    height: 400px;
+    overflow: auto;
+}
+
+#approverList tr {
+    cursor: pointer;
+}
+
+#approverList tr.selected {
+    background-color: #e3f2fd;
+}
+
+#approverList tr:hover {
+    background-color: #f5f5f5;
+}
+
+#approverList .btn-group {
+    white-space: nowrap;
+}
+
+.department-head {
+    margin-left: 20px;
+    font-weight: bold;
+}
+
+.line-content {
+    display: inline-block;
+    width: calc(100% - 60px);
+}
+
+.line-actions {
+    display: inline-block;
+    width: 50px;
+    text-align: right;
+}
+
+.employee {
+    margin-left: 20px;
+}
+
+.employees {
+    margin-left: 20px;
+    border-left: 1px dotted #ddd;
+}
+
+/* 버튼 그룹 */
+.action-button-group {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.action-button-group .btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+}
+
+/* 휴가 문서 테이블 */
+.vacation-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.vacation-table th,
+.vacation-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+.vacation-table th {
+    background-color: #f5f5f5;
+}
+
+.vacation-input-form .form-group {
+    display: flex;
+    flex-wrap: nowrap; /* 줄바꿈 방지 */
+    align-items: center; /* 세로 정렬 */
+    gap: 15px; /* 요소 간 간격 */
+}
+
+.vacation-input-form .form-group label {
+    margin-right: 10px; /* 라벨과 입력 요소 간의 간격 */
+    font-weight: bold;
+}
+
+.vacation-input-form select,
+.vacation-input-form input[type="date"] {
+    width: 200px; /* 입력 필드 크기 유지 */
+    height: 40px;
+    font-size: 16px;
+}
+
+.editor-container {
+    margin-top: 20px; /* 위의 폼과 간격 */
+}
+
+#editor {
+    width: 100%; /* 에디터가 줄어들지 않도록 */
+    height: 300px; /* 고정된 높이 */
+}
+
+
+
+.approval-container {
+    padding: 20px;
+}
+
+/* 폼 선택 영역 */
+.form-select-area {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.button-group {
+    display: none !important; /* !important로 초기 상태 강제 */
+    margin-bottom: 0.5rem; /* select box와 정렬을 맞추기 위한 여백 */
+}
+
+.button-group.show {
+    display: flex !important;
+}
+
+/* 선택된 결재자 테이블 영역 */
+.selected-approvers {
+    flex: 1;
+    overflow-y: auto;
+    margin: 0;  /* 마진 제거 */
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+/* 스크롤 조건부 표시 */
+.selected-approvers:empty {
+    overflow-y: hidden;
+}
+
+/* select-box와 버튼 그룹의 정렬을 위한 컨테이너 스타일 */
+.select-box-wrapper {
+    margin-bottom: 0;
+    display: flex;
+    align-items: flex-end; /* 하단 정렬 */
+}
+
+.select-box {
+    margin-bottom: 0; /* 기존 마진 제거 */
+    flex-grow: 1;
+}
+
+.select-box-wrapper label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+/* 라벨과 select box 간격 조정 */
+.select-box label {
+    margin-bottom: 0.5rem;
+}
+
+.form-select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* 버튼 그룹 */
+.btn-group {
+    white-space: nowrap;
+}
+
+.saved-lines-container {
+    flex: 1;
+    overflow-y: auto;
+    margin: 0;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+/* 7. 공통 스타일 */
+h6 {
+    margin-bottom: 1rem;
+    color: #495057;
+    font-weight: 600;
+}
+
+/* 5. 선택된 결재자 영역 */
+.approval-manager {
+    height: 55%;  /* 40%에서 55%로 증가 */
+    min-height: 200px;
+    margin-bottom: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 10. 저장된 결재선 아이템 */
+.saved-line-item {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+}
+
+.saved-line-item:hover {
+    background-color: #f8f9fa;
+}
+
+.saved-line-item.selected {
+    background-color: #e7f5ff;
+    border-color: #339af0;
+}
+
+.selected-approvers tr {
+    cursor: default;
+}
+
+.saved-line-item .approver-list {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.saved-line-item .actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+#approvalLineModal .modal-footer > div {
+    width: auto;
+}
+
+/* 전결 허용 스위치 */
+#approvalLineModal .form-switch {
+    padding-right: 2.5rem;
+}
+
+#approvalLineModal .form-check-input {
+    width: 3rem;
+    height: 1.5rem;
+    margin-left: -2.5rem;
+    cursor: pointer;
+}
+
+#approvalLineModal .form-check-label {
+    padding-top: 0.25rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+/* 9. 테이블 스타일 */
+.selected-approvers table {
+    margin: 0;
+    width: 100%;
+}
+
+.selected-approvers th,
+.selected-approvers td {
+    padding: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/*!* 테이블 셀 조정을 위한 CSS 추가 *!*/
+/*.selected-approvers table td {*/
+/*    white-space: nowrap;*/
+/*    overflow: hidden;*/
+/*    text-overflow: ellipsis;*/
+/*}*/
+
+.selected-approvers .table {
+    table-layout: fixed;
+}
+
+/*.selected-approvers td {*/
+/*    white-space: nowrap;*/
+/*    overflow: hidden;*/
+/*    text-overflow: ellipsis;*/
+/*}*/
+
+/* 각 컬럼 너비 조정 */
+.selected-approvers .table th:nth-child(1) { width: 10%; }  /* 순서 */
+.selected-approvers .table th:nth-child(2) { width: 25%; }  /* 부서 */
+.selected-approvers .table th:nth-child(3) { width: 40%; }  /* 직책/이름 */
+.selected-approvers .table th:nth-child(4) { width: 25%; }  /* 기능 */
+
+/* 참조자 영역 스타일 */
+.selected-references {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+.selected-references .table {
+    table-layout: fixed;
+}
+
+.selected-references td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 참조자 테이블 컬럼 너비 조정 */
+.selected-references .table th:nth-child(1) { width: 30%; }  /* 부서 */
+.selected-references .table th:nth-child(2) { width: 45%; }  /* 직책/이름 */
+.selected-references .table th:nth-child(3) { width: 25%; }  /* 기능 */
+
+.saved-references-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    padding: 1rem;
+}
+
+
+/* 참조자 삭제 버튼 */
+.reference-delete-btn {
+    padding: 2px 8px;
+    font-size: 0.875rem;
+}
+
+/* approvalForm.css에 추가 */
+.reference-list {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+    min-height: 200px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.reference-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.reference-item:last-child {
+    border-bottom: none;
+}
+
+.btn-delete {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1;
+    border-radius: 0.2rem;
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+}
+
+.btn-delete:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* 참조자 표시 영역 스타일 */
+.reference-display-area {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+
+.reference-display-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.reference-display-item {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 12px;
+    background-color: #e7f3ff;
+    border-radius: 15px;
+    font-size: 14px;
+}
+
+/* 결재선/참조자 지정 버튼 영역 */
+.approval-actions {
+    margin-top: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* 모달 푸터 내 전결 허용 체크박스 스타일 */
+.modal-footer .form-switch {
+    margin: 0;
+    padding: 0.5rem 1rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.modal-footer .form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+/* 결재선/참조자 버튼 영역 */
+.approval-button-area {
+    margin-bottom: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.approval-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* 기안 관련 버튼 그룹 */
+.button-group {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+/* 모달 푸터 전결 허용 스타일 수정 */
+.modal-footer .form-switch {
+    display: flex;
+    align-items: center;
+    margin-right: 1rem;
+    padding: 0;
+    background-color: transparent;
+    border: none;
+}
+
+.modal-footer .form-switch .form-check-input {
+    margin-right: 0.5rem;
+}
+
+.modal-footer .form-check-label {
+    margin: 0;
+    white-space: nowrap;
+}
+
+/*-----------------------------------------------에디터*/
+.editor-container {
+    margin-bottom: 1.5rem;
+}
+
+.form-editor {
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+/* 에디터 내부 여백 조정 */
+.toastui-editor-defaultUI {
+    border: none !important;
+}
+
+/* 첨부파일 버튼(label) 스타일 */
+#attachmentLabel {
+    cursor: pointer;
+    margin-left: 0.5rem;
+    display: inline-block;
+}
+
+/* 첨부파일 목록 영역 스타일 */
+.attachment-display-area {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.attachment-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;  /* flexbox 사용 */
+    flex-wrap: wrap;  /* 여러 줄로 나누기 */
+    gap: 0.5rem;  /* 항목 간 간격 */
+}
+
+.attachment-item {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    height: 36px;  /* 고정 높이 설정 */
+    line-height: 1.2;  /* 텍스트 수직 정렬 조정 */
+    box-sizing: border-box;  /* padding이 height에 포함되도록 */
+}
+
+.attachment-item:last-child {
+    margin-bottom: 0;
+}
+
+/* 삭제 버튼 */
+.attachment-item .remove-btn {
+    color: #dc3545;
+    cursor: pointer;
+    margin-left: 0.5rem;  /* 파일명과의 간격 */
+    font-size: 1rem;
+}
+
+.attachment-item .remove-btn:hover {
+    color: #bd2130;
+}
+
+/* 영역 제목 스타일 */
+.attachment-display-area h6 {
+    color: #495057;
+    margin-bottom: 1rem;
+}
+
+/* 6. 저장된 결재선 영역 */
+.saved-lines {
+    height: 45%;  /* 60%에서 45%로 감소 */
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 8. 스크롤바 스타일 통일 */
+.org-tree::-webkit-scrollbar,
+.selected-approvers::-webkit-scrollbar,
+.saved-lines-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.org-tree::-webkit-scrollbar-thumb,
+.selected-approvers::-webkit-scrollbar-thumb,
+.saved-lines-container::-webkit-scrollbar-thumb {
+    background-color: #adb5bd;
+    border-radius: 3px;
+}
+
+/* 영역 제목 스타일링 */
+.approval-manager h6,
+.saved-lines h6 {
+    margin-bottom: 1rem;
+    color: #495057;
+    font-weight: 600;
+}
+.line-title {
+    font-weight: bold;
+}
+
+.final-mark {
+    color: #0d6efd;  /* Bootstrap의 파란색 컬러 코드 */
+    font-weight: bold;
+}
+
+/* 테이블 컬럼 너비 조정 */
+.selected-approvers .table th:nth-child(1) { width: 10%; }  /* 순서 */
+.selected-approvers .table th:nth-child(2) { width: 20%; }  /* 부서 */
+.selected-approvers .table th:nth-child(3) { width: 25%; }  /* 직책/이름 (줄이기) */
+.selected-approvers .table th:nth-child(4) { width: 15%; }  /* 전결권 (줄이기) */
+.selected-approvers .table th:nth-child(5) { width: 30%; }  /* 기능 (늘리기) */
+
+
+/* 테이블 열 너비 및 정렬 조정 */
+.expense-items-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.expense-items-table th,
+.expense-items-table td {
+    padding: 8px;
+    vertical-align: middle;
+}
+
+/* 각 열 너비 조정 */
+.expense-items-table th:nth-child(1) { /* 지출일자 */
+    width: 12%;
+}
+.expense-items-table th:nth-child(2) { /* 지출분류 */
+    width: 12%;
+}
+.expense-items-table th:nth-child(3) { /* 결제수단 */
+    width: 10%;
+}
+.expense-items-table th:nth-child(4) { /* 수량 */
+    width: 8%;
+}
+.expense-items-table th:nth-child(5) { /* 단가 */
+    width: 13%;
+}
+.expense-items-table th:nth-child(6) { /* 금액 */
+    width: 15%;
+}
+.expense-items-table th:nth-child(7) { /* 내용 */
+    width: 20%;
+}
+.expense-items-table th:nth-child(8) { /* 삭제 */
+    width: 10%;
+}
+
+/* 숫자 입력 필드 우측 정렬 */
+.expense-items-table input[type="number"] {
+    text-align: right;
+}
+
+/* 금액 셀 스타일 */
+.expense-items-table td:nth-child(5) {
+    text-align: right;
+    white-space: nowrap;  /* 원 표시가 줄바꿈되지 않도록 */
+}
+
+/* 삭제 버튼 스타일 */
+.expense-items-table .delete-btn {
+    white-space: nowrap;
+    width: 100%;
+    padding: 6px 12px;
+}
+
+/* 참조자 모달 기본 레이아웃 */
+#referenceModal .modal-dialog {
+    max-width: 800px;
+    height: 600px;  /* 모달 전체 높이 고정 */
+    margin: 1.75rem auto;
+}
+
+#referenceModal .modal-content {
+    height: 100%;
+}
+
+#referenceModal .modal-body {
+    height: calc(100% - 120px);  /* 헤더(60px)와 푸터(60px) 제외 */
+    display: flex;
+    padding: 1rem;
+    overflow: hidden;
+}
+
+/* 참조자 모달 내부 레이아웃 */
+#referenceModal .row {
+    width: 100%;
+    margin: 0;
+    height: 100%;  /* 행 높이를 100%로 설정 */
+}
+
+#referenceModal .col-6 {
+    height: 100%;  /* 열 높이를 100%로 설정 */
+    padding: 0 15px;
+}
+
+/* 조직도 트리 영역 (왼쪽) */
+#referenceModal .org-tree {
+    height: 100%;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+/* 선택된 참조자 영역 (오른쪽) */
+#referenceModal .reference-list {
+    height: calc(100% - 30px);  /* h6 제목 높이 제외 */
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+/* 스크롤바 스타일 통일 */
+#referenceModal .org-tree::-webkit-scrollbar,
+#referenceModal .reference-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+#referenceModal .org-tree::-webkit-scrollbar-thumb,
+#referenceModal .reference-list::-webkit-scrollbar-thumb {
+    background-color: #adb5bd;
+    border-radius: 3px;
+}
+
+.search-result {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.search-result .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    margin-left: 0.25rem;
+}
+

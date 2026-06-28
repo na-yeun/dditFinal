@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper
+	namespace="kr.or.ddit.roomReservation.dao.RoomReservationMapper">
+
+
+
+
+	<resultMap type="RoomReservationVO" id="RoomReservationList"
+		autoMapping="true">
+		<association property="roomTime" javaType="RoomTimeVO"
+			autoMapping="true" />
+		<association property="timeReser"
+			javaType="TimeReservationVO" autoMapping="true"></association>
+		<association property="employee" javaType="EmployeeVO"
+			autoMapping="true"></association>
+		<association property="room" javaType="RoomVO"
+			autoMapping="true"></association>
+		<association property="department" javaType="DepartmentVO"
+			autoMapping="true"></association>
+	</resultMap>
+	<!-- 오늘날짜 한 시설에 대한 예약 현황리스트 -->
+	<select id="selectRoomEmpList" resultMap="RoomReservationList">
+
+		WITH V_TIME AS (
+		SELECT
+		RT.ROOM_ID,
+		RT.TIME_CODE,
+		RT.ROOMTIME_YN,
+		RT.TROOM_IMG,
+		R.ROOM_HOSU,
+		R.ROOM_NAME,
+		R.ROOM_NUM,
+		R.ROOM_IMG,
+		R.ROOM_DETAIL,
+		R.ROOM_YN
+		FROM ROOM_TIME RT
+		INNER JOIN ROOM R ON RT.ROOM_ID = R.ROOM_ID
+		),
+		V_ROOMTIME AS (
+		SELECT
+		VT.ROOM_ID,
+		VT.ROOM_HOSU,
+		VT.ROOM_NAME,
+		VT.ROOM_NUM,
+		VT.ROOMTIME_YN,
+		VT.TROOM_IMG,
+		VT.ROOM_IMG,
+		VT.ROOM_DETAIL,
+		VT.ROOM_YN,
+		T.TIME_CODE,
+		T.TIME_RANGE
+		FROM V_TIME VT
+		INNER JOIN TIME_RESERVATION T ON VT.TIME_CODE = T.TIME_CODE
+		),
+
+		V_RESER AS (SELECT
+		RR.RESER_ID
+		,RR.ROOM_ID
+		,RR.TIME_CODE
+		,RR.RESER_CAUSE
+		,RR.RESER_STATUS
+		,RR.EMP_ID
+		,RR.RESER_DATE
+		,VRT.ROOM_HOSU
+		,VRT.ROOM_NAME
+		,VRT.TIME_RANGE
+
+		FROM ROOM_RESERVATION RR
+		INNER JOIN V_ROOMTIME VRT ON RR.ROOM_ID = VRT.ROOM_ID
+		AND RR.TIME_CODE = VRT.TIME_CODE
+		)
+		,V_EMP AS (
+		SELECT E.EMP_ID,
+		E.EMP_NAME,
+		E.EMP_PHONE,
+		E.EMP_MAIL,
+		E.DEPART_CODE,
+		VR.RESER_ID,
+		VR.ROOM_ID,
+		VR.TIME_CODE,
+		VR.RESER_CAUSE,
+		VR.RESER_STATUS,
+		VR.ROOM_HOSU,
+		VR.ROOM_NAME,
+		VR.TIME_RANGE,
+		VR.RESER_DATE
+
+		FROM V_RESER VR
+		INNER JOIN EMPLOYEE E ON VR.EMP_ID= E.EMP_ID
+		WHERE VR.RESER_DATE &gt;= TRUNC(SYSDATE)
+		AND VR.RESER_DATE &lt; SYSDATE + 1
+		)
+		SELECT
+		VE.EMP_ID,
+		VE.EMP_NAME,
+		VE.EMP_PHONE,
+		VE.EMP_MAIL,
+		VE.DEPART_CODE,
+		VE.RESER_ID,
+		VE.ROOM_ID,
+		VE.TIME_CODE,
+		VE.RESER_CAUSE,
+		VE.RESER_STATUS,
+		VE.ROOM_HOSU,
+		VE.ROOM_NAME,
+		VE.TIME_RANGE,
+		TO_CHAR(VE.RESER_DATE, 'YYYY-MM-DD HH24:MI') AS VERESER_DATE,
+		D.DEPART_NAME
+		FROM V_EMP VE
+		INNER JOIN DEPARTMENT D ON VE.DEPART_CODE = D.DEPART_CODE
+		WHERE VE.ROOM_ID =#{roomId}
+		ORDER BY VE.TIME_CODE
+
+	</select>
+
+	<!-- 오늘 날짜 예약현황 쿼리문 -->
+	<select id="selectRoomReserList" resultMap="RoomReservationList">
+		WITH V_TIME AS (
+		SELECT
+		RT.ROOM_ID,
+		RT.TIME_CODE,
+		RT.ROOMTIME_YN,
+		RT.TROOM_IMG,
+		R.ROOM_HOSU,
+		R.ROOM_NAME,
+		R.ROOM_NUM,
+		R.ROOM_IMG,
+		R.ROOM_DETAIL,
+		R.ROOM_YN
+		FROM ROOM_TIME RT
+		INNER JOIN ROOM R ON RT.ROOM_ID = R.ROOM_ID
+		),
+		V_ROOMTIME AS (
+		SELECT
+		VT.ROOM_ID,
+		VT.ROOM_HOSU,
+		VT.ROOM_NAME,
+		VT.ROOM_NUM,
+		VT.ROOMTIME_YN,
+		VT.TROOM_IMG,
+		VT.ROOM_IMG,
+		VT.ROOM_DETAIL,
+		VT.ROOM_YN,
+		T.TIME_CODE,
+		T.TIME_RANGE
+		FROM V_TIME VT
+		INNER JOIN TIME_RESERVATION T ON VT.TIME_CODE = T.TIME_CODE
+		),
+
+		V_RESER AS (SELECT
+		RR.RESER_ID
+		,RR.ROOM_ID
+		,RR.TIME_CODE
+		,RR.RESER_CAUSE
+		,RR.RESER_STATUS
+		,RR.EMP_ID
+		,RR.RESER_DATE
+		,VRT.ROOM_HOSU
+		,VRT.ROOM_NAME
+		,VRT.TIME_RANGE
+
+		FROM ROOM_RESERVATION RR
+		INNER JOIN V_ROOMTIME VRT ON RR.ROOM_ID = VRT.ROOM_ID
+		AND RR.TIME_CODE = VRT.TIME_CODE
+		)
+		,V_EMP AS (
+		SELECT E.EMP_ID,
+		E.EMP_NAME,
+		E.EMP_PHONE,
+		E.EMP_MAIL,
+		E.DEPART_CODE,
+		VR.RESER_ID,
+		VR.ROOM_ID,
+		VR.TIME_CODE,
+		VR.RESER_CAUSE,
+		VR.RESER_STATUS,
+		VR.ROOM_HOSU,
+		VR.ROOM_NAME,
+		VR.TIME_RANGE,
+		VR.RESER_DATE
+
+		FROM V_RESER VR
+		INNER JOIN EMPLOYEE E ON VR.EMP_ID= E.EMP_ID
+		WHERE VR.RESER_DATE &gt;= TRUNC(SYSDATE)
+		AND VR.RESER_DATE &lt; SYSDATE + 1
+		)
+		SELECT
+		VE.EMP_ID,
+		VE.EMP_NAME,
+		VE.EMP_PHONE,
+		VE.EMP_MAIL,
+		VE.DEPART_CODE,
+		VE.RESER_ID,
+		VE.ROOM_ID,
+		VE.TIME_CODE,
+		VE.RESER_CAUSE,
+		VE.RESER_STATUS,
+		VE.ROOM_HOSU,
+		VE.ROOM_NAME,
+		VE.TIME_RANGE,
+		TO_CHAR(VE.RESER_DATE, 'YYYY-MM-DD HH24:MI') AS VERESER_DATE,
+		D.DEPART_NAME
+		FROM V_EMP VE
+		INNER JOIN DEPARTMENT D ON VE.DEPART_CODE = D.DEPART_CODE
+
+
+	</select>
+
+
+
+	<!-- -->
+	<select id="selectRoomReser" resultMap="RoomReservationList">
+		WITH V_TIME AS (
+		SELECT
+		RT.ROOM_ID,
+		RT.TIME_CODE,
+		RT.ROOMTIME_YN,
+		RT.TROOM_IMG,
+		R.ROOM_HOSU,
+		R.ROOM_NAME,
+		R.ROOM_NUM,
+		R.ROOM_IMG,
+		R.ROOM_DETAIL,
+		R.ROOM_YN
+		FROM ROOM_TIME RT
+		INNER JOIN ROOM R ON RT.ROOM_ID = R.ROOM_ID
+		),
+		V_ROOMTIME AS (
+		SELECT
+		VT.ROOM_ID,
+		VT.ROOM_HOSU,
+		VT.ROOM_NAME,
+		VT.ROOM_NUM,
+		VT.ROOMTIME_YN,
+		VT.TROOM_IMG,
+		VT.ROOM_IMG,
+		VT.ROOM_DETAIL,
+		VT.ROOM_YN,
+		T.TIME_CODE,
+		T.TIME_RANGE
+		FROM V_TIME VT
+		INNER JOIN TIME_RESERVATION T ON VT.TIME_CODE = T.TIME_CODE
+		),
+
+		V_RESER AS (SELECT
+		RR.RESER_ID
+		,RR.ROOM_ID
+		,RR.TIME_CODE
+		,RR.RESER_CAUSE
+		,RR.RESER_STATUS
+		,RR.EMP_ID
+		,RR.RESER_DATE
+		,VRT.ROOM_HOSU
+		,VRT.ROOM_NAME
+		,VRT.TIME_RANGE
+
+		FROM ROOM_RESERVATION RR
+		INNER JOIN V_ROOMTIME VRT ON RR.ROOM_ID = VRT.ROOM_ID
+		AND RR.TIME_CODE = VRT.TIME_CODE
+		)
+		,V_EMP AS (
+		SELECT E.EMP_ID,
+		E.EMP_NAME,
+		E.EMP_PHONE,
+		E.EMP_MAIL,
+		E.DEPART_CODE,
+		VR.RESER_ID,
+		VR.ROOM_ID,
+		VR.TIME_CODE,
+		VR.RESER_CAUSE,
+		VR.RESER_STATUS,
+		VR.ROOM_HOSU,
+		VR.ROOM_NAME,
+		VR.TIME_RANGE,
+		VR.RESER_DATE
+
+		FROM V_RESER VR
+		INNER JOIN EMPLOYEE E ON VR.EMP_ID= E.EMP_ID
+		WHERE VR.RESER_DATE &gt;= TRUNC(SYSDATE)
+		AND VR.RESER_DATE &lt; SYSDATE + 1
+		)
+		SELECT
+		VE.EMP_ID,
+		VE.EMP_NAME,
+		VE.EMP_PHONE,
+		VE.EMP_MAIL,
+		VE.DEPART_CODE,
+		VE.RESER_ID,
+		VE.ROOM_ID,
+		VE.TIME_CODE,
+		VE.RESER_CAUSE,
+		VE.RESER_STATUS,
+		VE.ROOM_HOSU,
+		VE.ROOM_NAME,
+		VE.TIME_RANGE,
+		TO_CHAR(VE.RESER_DATE, 'YYYY-MM-DD HH24:MI') AS VERESER_DATE,
+		D.DEPART_NAME
+		FROM V_EMP VE
+		INNER JOIN DEPARTMENT D ON VE.DEPART_CODE = D.DEPART_CODE
+
+	</select>
+
+	<!-- 예약이 등록되는 쿼리문 -->
+	<insert id="insertRoomReser">
+		INSERT INTO ROOM_RESERVATION (
+		ROOM_ID,
+		TIME_CODE,
+		RESER_CAUSE,
+		EMP_ID
+		) VALUES (
+		#{roomId, jdbcType=VARCHAR},
+		#{timeCode, jdbcType=VARCHAR},
+		#{reserCause, jdbcType=VARCHAR},
+		#{empId, jdbcType=VARCHAR}
+		)
+	</insert>
+<!-- 
+	<update id="updateRoomReser">
+		UPDATE ROOM_TIME
+		SET ROOMTIME_YN = 'N'
+		WHERE ROOM_ID = #{roomId, jdbcType=VARCHAR}
+		AND TIME_CODE = #{timeCode, jdbcType=VARCHAR}
+		AND ROOMTIME_YN = 'Y'
+
+	</update> -->
+
+	<!-- <update id="updateRoomTimeYn" > MERGE INTO ROOM_TIME RT USING ( SELECT 
+		RT.ROOM_ID, RT.TIME_CODE FROM ROOM_TIME RT INNER JOIN ROOM_RESERVATION RR 
+		ON RT.ROOM_ID = #{roomId} AND RT.TIME_CODE = #{timeCode} WHERE RT.ROOMTIME_YN 
+		= 'N' AND RR.RESER_DATE = TRUNC(SYSDATE) ) SRC ON (RT.ROOM_ID = SRC.ROOM_ID 
+		AND RT.TIME_CODE = SRC.TIME_CODE) WHEN MATCHED THEN UPDATE SET RT.ROOMTIME_YN 
+		= 'Y' </update> -->
+
+	<delete id="deleteRoomReser">
+		DELETE FROM ROOM_RESERVATION
+		WHERE RESER_ID = #{reserId}
+
+	</delete>
+
+
+
+
+
+</mapper>

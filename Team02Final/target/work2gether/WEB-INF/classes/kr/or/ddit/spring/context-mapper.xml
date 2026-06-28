@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+<!-- 	Spring-mybatis 연동 빈 등록  -->
+	
+	<bean class="org.apache.ibatis.session.Configuration" id="configuration">
+		<property name="jdbcTypeForNull" value="NULL" />
+		<property name="mapUnderscoreToCamelCase" value="true" />
+	</bean>
+	
+	<bean class="org.mybatis.spring.SqlSessionFactoryBean" id="sqlSessionFactory" >
+		<property name="mapperLocations" value="classpath:kr/or/ddit/mybatis/mappers/**/*.xml" />
+		<property name="dataSource" ref="dataSource" />
+		<property name="configuration" ref="configuration" />
+		<property name="typeAliasesPackage" value="kr.or.ddit.**.vo" />
+		<property name="failFast" value="true" />
+	</bean>
+	
+	<bean class="org.mybatis.spring.SqlSessionTemplate" id="sqlSessionTemplate">
+		<constructor-arg name="sqlSessionFactory" ref="sqlSessionFactory"/>
+	</bean>
+	
+	<mybatis-spring:scan base-package="kr.or.ddit.**.dao"
+		annotation="org.apache.ibatis.annotations.Mapper"
+		factory-ref="sqlSessionFactory"
+	/>
+	
+</beans>

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.gmail.dao.MailSentMapper">
+
+<resultMap type="MailSentVO" id="sentMap" autoMapping="true">
+	<id property="empId" column="EMP_ID"/>
+	<id property="empMail" column="EMP_MAIL"/>
+	<id property="mailMessageId" column="MAIL_MESSAGE_ID"/>
+	<collection property="mailAttachmentList" ofType="MailAttachmentVO" autoMapping="true">
+	</collection>
+</resultMap>
+
+<sql id="searchListFrag">
+	<if test="variousCondition neq null">
+		<if test="@org.apache.commons.lang3.StringUtils@isNotBlank(variousCondition.value)">
+			<choose>
+                <when test="variousCondition.type eq 'to'">
+                    AND INSTR(SMAIL_TO, #{variousCondition.value}) > 0
+                </when>
+                <when test="variousCondition.type eq 'title'">
+                    AND INSTR(SMAIL_SUBJECT, #{variousCondition.value}) > 0
+                </when>
+                <when test="variousCondition.type eq 'content'">
+                    AND INSTR(SMAIL_CONTENT, #{variousCondition.value}) > 0
+                </when>
+                <otherwise>
+                	AND
+                     (INSTR(SMAIL_TO, #{variousCondition.value}) > 0
+                     OR INSTR(SMAIL_SUBJECT, #{variousCondition.value}) > 0
+                     OR INSTR(SMAIL_CONTENT, #{variousCondition.value}) > 0)
+                </otherwise>
+           	</choose>
+		</if>
+	</if>
+</sql>
+
+
+
+
+<select id="selectTotalRecord" resultType="int">
+	SELECT COUNT(*)
+	FROM MAIL_SENT
+	WHERE EMP_MAIL=#{variousCondition.empMail}
+	<include refid="searchListFrag" />
+</select>
+	
+<select id="selectSentMailList" resultType="MailSentVO">
+	SELECT B.*
+	FROM 
+	(
+		SELECT ROWNUM RNUM, A.*
+		FROM 
+		(
+			SELECT
+                EMP_ID
+                , EMP_MAIL
+                , MAIL_MESSAGE_ID
+                , SMAIL_TO
+                , SMAIL_SUBJECT
+                , SMAIL_DATE
+            FROM MAIL_SENT
+            WHERE EMP_MAIL=#{variousCondition.empMail}
+            <include refid="searchListFrag" />
+            ORDER BY SMAIL_DATE DESC
+			
+		) A
+	) B
+	WHERE RNUM BETWEEN #{startRow} AND #{endRow}
+</select>
+
+
+<select id="selectSentMailDetail" resultMap="sentMap">
+	SELECT MAIL_SENT.EMP_ID
+		, MAIL_SENT.EMP_MAIL
+		, MAIL_SENT.MAIL_MESSAGE_ID
+		, MAIL_SENT.SMAIL_TO
+		, MAIL_SENT.SMAIL_SUBJECT
+		, MAIL_SENT.SMAIL_DATE
+		, MAIL_SENT.SMAIL_CONTENT_TYPE
+		, MAIL_SENT.SMAIL_CONTENT
+		, MAIL_SENT.SMAIL_CC
+		, MAIL_SENT.SMAIL_BCC
+		, MAIL_SENT.SMAIL_REPLY_TO
+      	, MAIL_ATTACHMENT.*
+	FROM MAIL_SENT
+	LEFT OUTER JOIN MAIL_ATTACHMENT
+	ON MAIL_SENT.MAIL_MESSAGE_ID = MAIL_ATTACHMENT.MAILMESSAGE_ID
+	WHERE MAIL_SENT.MAIL_MESSAGE_ID = #{mailMessageId}
+</select>
+
+
+<select id="selectLastApiCallTime" resultType="String">
+	SELECT SMAIL_CALLTIME
+		FROM (
+		    SELECT SMAIL_CALLTIME
+		    FROM MAIL_SENT
+		    WHERE EMP_MAIL = #{empMail}
+		    ORDER BY SMAIL_CALLTIME DESC
+		)
+		WHERE ROWNUM = 1
+</select>
+
+<select id="selectSentMailExist" resultType="int">
+	SELECT COUNT(*)
+	FROM MAIL_SENT
+	WHERE EMP_ID=#{empId}
+		AND EMP_MAIL=#{empMail}
+		AND MAIL_MESSAGE_ID=#{mailMessageId}
+</select>
+
+<insert id="insertSentMail" parameterType="MailSentVO">
+	INSERT INTO MAIL_SENT(
+		EMP_ID, EMP_MAIL, MAIL_MESSAGE_ID, SMAIL_TO, SMAIL_SUBJECT, SMAIL_DATE,
+		SMAIL_CONTENT_TYPE, SMAIL_CONTENT, SMAIL_CC, SMAIL_BCC, SMAIL_REPLY_TO,
+		SMAIL_CALLTIME
+	)
+	VALUES(
+		#{empId,jdbcType=VARCHAR}
+		, #{empMail,jdbcType=VARCHAR}
+		, #{mailMessageId,jdbcType=VARCHAR}
+		, #{smailTo,jdbcType=VARCHAR}
+		, #{smailSubject,jdbcType=VARCHAR}
+		, #{smailDate,jdbcType=VARCHAR}
+		, #{smailContentType,jdbcType=VARCHAR}
+		, #{smailContent,jdbcType=CLOB}
+		, #{smailCc,jdbcType=VARCHAR}
+		, #{smailBcc,jdbcType=VARCHAR}
+		, #{smailReplyTo,jdbcType=VARCHAR}
+		, #{smailCalltime,jdbcType=VARCHAR}
+	)
+</insert>
+
+<delete id="deleteSentMail">
+	DELETE FROM MAIL_SENT
+	WHERE MAIL_MESSAGE_ID=#{mailMessageid}
+</delete>
+
+<select id="selectSearchMail" resultType="EmployeeVO">
+	SELECT 
+	    EMPLOYEE.EMP_NAME,
+	    EMPLOYEE.EMP_MAIL,
+	    COMMON_CODE.CODE_COMMENT AS POSI_NAME
+	FROM EMPLOYEE LEFT JOIN COMMON_CODE ON EMPLOYEE.POSI_ID = COMMON_CODE.CODE
+	WHERE EMPLOYEE.EMP_MAIL = #{empMail} 
+		AND COMMON_CODE.TABLE_NAME = 'EMPLOYEE' 
+		AND COMMON_CODE.CODE_TYPE = '직급'
+</select>
+
+
+
+</mapper>
