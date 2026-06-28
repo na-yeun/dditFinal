@@ -1,0 +1,35 @@
+/**
+ * IntStream.range(0, approvers.size())
+ *
+     * //예시
+     * IntStream.range(0, 3)  // 0, 1, 2 순서대로 생성
+         * 시작 숫자(포함)부터 끝 숫자(미포함)까지의 연속된 정수 스트림을 생성
+         * 주로 인덱스 기반 반복이 필요할 때 사용
+         * for문 for(int i = 0; i < 3; i++)와 동일한 역할
+ *
+ * .mapToObj()
+     * //예시
+     * IntStream.range(0, 3)
+     *     .mapToObj(i -> "Number " + i)  // "Number 0", "Number 1", "Number 2" 생성
+         * 기본 타입 스트림(IntStream)을 객체 스트림으로 변환 (int -> 객체로)
+         * 각 요소를 다른 타입의 객체로 변환할 때 사용
+         * lambda 식을 사용하여 각 요소를 어떻게 변환할지 정의
+         * 여기서는 인덱스를 사용해 ApprovalVO 객체를 생성
+ *
+ * .collect(Collectors.toList())
+     * // 예시
+     * List<String> list = Stream.of("a", "b", "c")
+     *     .collect(Collectors.toList());  // ["a", "b", "c"]
+         * 스트림의 요소들을 List로 수집
+         * 스트림 처리 결과를 실제 컬렉션으로 변환
+         * 스트림은 데이터의 흐름이라 최종 결과를 얻으려면 collect 필요
+ *
+ * 전체 코드를 for문으로 표현하면
+     * List<ApprovalVO> approvalList = new ArrayList<>();
+     * for (int index = 0; index < approvers.size(); index++) {
+     *     Map<String, Object> approver = approvers.get(index);
+     *     ApprovalVO approval = new ApprovalVO();
+     *     // approval 설정...
+     *     approvalList.add(approval);
+ * }
+ */
